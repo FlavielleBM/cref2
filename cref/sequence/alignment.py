@@ -18,6 +18,12 @@ class BlastResult:
                 'e-value': hsp.expect,
             })
 
+    def __eq__(self, other):
+        return self.pdb_code == other.pdb_code and self.hits == other.hits
+
+    def __hash__(self):
+        return hash((self.pdb_code, (tuple(x.items()) for x in self.hits)))
+
 
 def BlastError(Exception):
     """
@@ -68,8 +74,8 @@ def blast(sequence, db=None):
     """
     if db:
         output = _local_blast(sequence, db)
-        results = [BlastResult(a.hit_def, a.hsps) for a in output.alignments]
+        results = {BlastResult(a.hit_def, a.hsps) for a in output.alignments}
     else:
         output = _web_blast(sequence)
-        results = [BlastResult(a.accession, a.hsps) for a in output.alignments]
+        results = {BlastResult(a.accession, a.hsps) for a in output.alignments}
     return results
