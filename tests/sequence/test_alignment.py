@@ -8,9 +8,6 @@ class AlignmentTestCase(unittest.TestCase):
         results = blast('AASSF', 'tests/blastdb/pdbseqres')
         self.assertEqual(len(results), 218)
         pdbs = {result.pdb_code for result in results}
-        for result in results:
-            for hit in result.hits:
-                print(hit)
         self.assertIn('1o61', pdbs)
 
     def test_blast_local_error(self):
