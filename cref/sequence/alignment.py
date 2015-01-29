@@ -25,8 +25,6 @@ def _local_blast(sequence, db):
     }
     blastp = NcbiblastpCommandline(**args)
     output, error = blastp(stdin=sequence)
-    if error:
-        raise BlastError(error)
     return NCBIXML.read(StringIO(output))
 
 
