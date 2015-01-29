@@ -16,6 +16,7 @@ class BlastResult:
                 'score': hsp.score,
                 'bit score': hsp.bits,
                 'e-value': hsp.expect,
+                'gaps': hsp.gaps,
             })
 
     def __eq__(self, other):
