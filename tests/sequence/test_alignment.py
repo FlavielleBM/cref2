@@ -6,8 +6,9 @@ class AlignmentTestCase(unittest.TestCase):
 
     def test_blast_local(self):
         results = blast('AASSF', 'tests/blastdb/pdbseqres')
-        self.assertEqual(len(results), 218)
-        self.assertIn('1O61', results)
+        self.assertEqual(len(results), 500)
+        pdbs = {result.pdb_code for result in results}
+        self.assertIn('1o61', pdbs)
 
     def test_blast_local_error(self):
         with self.assertRaises(Exception) as cm:
@@ -16,6 +17,6 @@ class AlignmentTestCase(unittest.TestCase):
 
     def test_blast_web(self):
         results = blast('AASSF')
-        # Exact results may vary with new structures in the PDB
-        self.assertGreaterEqual(len(results), 100)
-        self.assertIn('1O61', results)
+        self.assertEqual(len(results), 500)
+        pdbs = {result.pdb_code for result in results}
+        self.assertIn('1o61', pdbs)

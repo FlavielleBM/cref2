@@ -4,6 +4,21 @@ from Bio.Blast import NCBIXML
 from Bio.Blast import NCBIWWW
 
 
+class BlastResult:
+
+    def __init__(self, pdb_code, hsps):
+        self.pdb_code = pdb_code[:4].lower()
+        self.hits = []
+        for hsp in hsps:
+            self.hits.append({
+                'start': hsp.sbjct_start,
+                'end': hsp.sbjct_end,
+                'score': hsp.score,
+                'bit score': hsp.bits,
+                'e-value': hsp.expect,
+            })
+
+
 def BlastError(Exception):
     """
     Represent errors during blast execution
@@ -53,8 +68,8 @@ def blast(sequence, db=None):
     """
     if db:
         output = _local_blast(sequence, db)
-        results = {align.hit_def[:4].upper() for align in output.alignments}
+        results = [BlastResult(a.hit_def, a.hsps) for a in output.alignments]
     else:
         output = _web_blast(sequence)
-        results = {align.accession[:4] for align in output.alignments}
+        results = [BlastResult(a.accession, a.hsps) for a in output.alignments]
     return results
