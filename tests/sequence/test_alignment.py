@@ -7,10 +7,10 @@ class AlignmentTestCase(unittest.TestCase):
     def test_blast_local(self):
         results = blast('AASSF', 'tests/blastdb/pdbseqres')
         self.assertEqual(len(results), 218)
-        self.assertIn('1o61', results)
+        self.assertIn('1O61', results)
 
     def test_blast_web(self):
         results = blast('AASSF')
-        print(results)
-        self.assertEqual(len(results), 1)
-        self.assertIn('1o61', results)
+        # Exact results may vary with new structures in the PDB
+        self.assertGreaterEqual(len(results), 100)
+        self.assertIn('1O61', results)
