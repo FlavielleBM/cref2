@@ -27,7 +27,7 @@ def _local_blast(sequence, db):
     output, error = blastp(stdin=sequence)
     if error:
         raise BlastError(error)
-    return StringIO(output)
+    return NCBIXML.read(StringIO(output))
 
 
 def _web_blast(sequence):
@@ -43,7 +43,7 @@ def _web_blast(sequence):
         'filter': "F",
         'genetic_code': 1
     }
-    return NCBIWWW.qblast(**args)
+    return NCBIXML.read(NCBIWWW.qblast(**args))
 
 
 def blast(sequence, db=None):
@@ -53,7 +53,10 @@ def blast(sequence, db=None):
     :param sequence: String containing the sequence
     :param local: True if the blast should be perfomed locally
     """
-    output = _local_blast(sequence, db) if db else _web_blast(sequence)
-    results = NCBIXML.read(output)
-    print(output, results)
-    return {alignment.hit_def[:4] for alignment in results.alignments}
+    if db:
+        output = _local_blast(sequence, db)
+        results = {align.hit_def[:4].upper() for align in output.alignments}
+    else:
+        output = _web_blast(sequence)
+        results = {align.accession[:4] for align in output.alignments}
+    return results
