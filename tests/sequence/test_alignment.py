@@ -9,6 +9,11 @@ class AlignmentTestCase(unittest.TestCase):
         self.assertEqual(len(results), 218)
         self.assertIn('1O61', results)
 
+    def test_blast_local_error(self):
+        with self.assertRaises(Exception) as cm:
+            blast('AASSF', 'tests')
+        self.assertIn('Database error', cm.exception.args[-1])
+
     def test_blast_web(self):
         results = blast('AASSF')
         # Exact results may vary with new structures in the PDB
