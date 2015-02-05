@@ -25,6 +25,9 @@ class BlastResult:
     def __hash__(self):
         return hash((self.pdb_code, (tuple(x.items()) for x in self.hits)))
 
+    def __repr__(self):
+        return '{}:\n{}'.format(self.pdb_code, self.hits)
+
 
 def BlastError(Exception):
     """
@@ -32,51 +35,54 @@ def BlastError(Exception):
     """
 
 
-def _local_blast(sequence, db):
-    args = {
-        'cmd': 'blastp',
-        'task': 'blastp',
-        'outfmt': 5,
-        'num_alignments': 500,
-        'db': db,
-        'evalue': 200000,
-        'word_size': 2,
-        'gapopen': 9,
-        'gapextend': 1,
-        'matrix': 'PAM30',
-    }
-    blastp = NcbiblastpCommandline(**args)
-    output, error = blastp(stdin=sequence)
-    return NCBIXML.read(StringIO(output))
+class Blast:
 
+    def __init__(self, db=None):
+        self.db = db
 
-def _web_blast(sequence):
-    args = {
-        'program': 'blastp',
-        'database': 'pdb',
-        'sequence': sequence,
-        'matrix_name': 'PAM30',
-        'word_size': 2,
-        'expect': 200000,
-        'hitlist_size': 500,
-        'gapcosts': '9 1',
-        'filter': "F",
-        'genetic_code': 1
-    }
-    return NCBIXML.read(NCBIWWW.qblast(**args))
+    def _local_blast(self, sequence):
+        args = {
+            'cmd': 'blastp',
+            'task': 'blastp',
+            'outfmt': 5,
+            'num_alignments': 500,
+            'db': self.db,
+            'evalue': 200000,
+            'word_size': 2,
+            'gapopen': 9,
+            'gapextend': 1,
+            'matrix': 'PAM30',
+        }
+        blastp = NcbiblastpCommandline(**args)
+        output, error = blastp(stdin=sequence)
+        return NCBIXML.read(StringIO(output))
 
+    def _web_blast(self, sequence):
+        args = {
+            'program': 'blastp',
+            'database': 'pdb',
+            'sequence': sequence,
+            'matrix_name': 'PAM30',
+            'word_size': 2,
+            'expect': 200000,
+            'hitlist_size': 500,
+            'gapcosts': '9 1',
+            'filter': "F",
+            'genetic_code': 1
+        }
+        return NCBIXML.read(NCBIWWW.qblast(**args))
 
-def blast(sequence, db=None):
-    """
-    Performs blast on a sequence
+    def align(self, sequence):
+        """
+        Performs blast on a sequence
 
-    :param sequence: String containing the sequence
-    :param local: True if the blast should be perfomed locally
-    """
-    if db:
-        output = _local_blast(sequence, db)
-        results = {BlastResult(a.hit_def, a.hsps) for a in output.alignments}
-    else:
-        output = _web_blast(sequence)
-        results = {BlastResult(a.accession, a.hsps) for a in output.alignments}
-    return results
+        :param sequence: String containing the sequence
+        :param local: True if the blast should be perfomed locally
+        """
+        if self.db:
+            res = self._local_blast(sequence)
+            results = {BlastResult(a.hit_def, a.hsps) for a in res.alignments}
+        else:
+            res = self._web_blast(sequence)
+            results = {BlastResult(a.accession, a.hsps) for a in res.alignments}
+        return results
