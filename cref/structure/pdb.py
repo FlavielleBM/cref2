@@ -9,5 +9,6 @@ class PDBDownloader:
 
     def retrieve(self, pdb_code):
         """
+        Download file from the Protein Data Bank
         """
         return self.pdbl.retrieve_pdb_file(pdb_code, pdir=self.target_dir)
