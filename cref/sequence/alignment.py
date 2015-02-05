@@ -11,8 +11,10 @@ class BlastResult:
         self.hits = []
         for hsp in hsps:
             self.hits.append({
-                'start': hsp.sbjct_start,
-                'end': hsp.sbjct_end,
+                'query_start': hsp.query_start,
+                'query_end': hsp.query_end,
+                'subject_start': hsp.sbjct_start,
+                'subject_end': hsp.sbjct_end,
                 'score': hsp.score,
                 'bit score': hsp.bits,
                 'e-value': hsp.expect,
