@@ -1,4 +1,6 @@
 import unittest
+import mock
+from io import StringIO
 from cref.sequence.alignment import blast
 
 
@@ -16,8 +18,11 @@ class AlignmentTestCase(unittest.TestCase):
         self.assertIn('Database error', cm.exception.args[-1])
 
     def test_blast_web(self):
-        results = blast('AASSF')
-        # Exact results may vary as new structures get added to pdb
-        self.assertGreaterEqual(len(results), 400)
-        pdbs = {result.pdb_code for result in results}
-        self.assertIn('1o61', pdbs)
+        with mock.patch('cref.sequence.alignment.NCBIWWW.qblast') as qblast:
+            with open('tests/samples/web_blast.xml') as qblast_results:
+                qblast.return_value = StringIO(qblast_results.read())
+            results = blast('AASSF')
+            # Exact results may vary as new structures get added to pdb
+            self.assertGreaterEqual(len(results), 400)
+            pdbs = {result.pdb_code for result in results}
+            self.assertIn('1o61', pdbs)
