@@ -12,4 +12,7 @@ def fragment(sequence, size=5):
         for i in range(len(sequence) - size + 1):
             yield sequence[i: i + size]
     else:
-        yield sequence
+        raise ValueError((
+            "Cannot create fragments with size {} "
+            "in a sequence with length {}"
+        ).format(size, len(sequence)))

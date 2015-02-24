@@ -22,12 +22,11 @@ class SequenceTestCase(unittest.TestCase):
         self.assertEqual(fragments[-1], 'EFGHIJKLM')
 
     def test_fragment_empty(self):
-        fragments = list(fragment(''))
-        self.assertEqual(len(fragments), 0)
-
-        fragments = list(fragment('ABCDEFGHIJKLM', 0))
-        self.assertEqual(len(fragments), 0)
+        with self.assertRaisesRegex(ValueError, 'Cannot create fragments'):
+            list(fragment(''))
+        with self.assertRaisesRegex(ValueError, 'Cannot create fragments'):
+            list(fragment('ABCDEFGHIJKLM', 0))
 
     def test_fragment_size_overflow(self):
-        fragments = list(fragment('ABCDEFGHIJKLM', 20))
-        self.assertEqual(len(fragments), 0)
+        with self.assertRaisesRegex(ValueError, 'Cannot create fragments'):
+            list(fragment('ABCDEFGHIJKLM', 20))
