@@ -3,7 +3,7 @@ import os
 import shutil
 from unittest.mock import patch
 
-from cref.structure.pdb import PDBDownloader
+from cref.structure.PDB import PDBDownloader
 
 
 class PDBTestCase(unittest.TestCase):

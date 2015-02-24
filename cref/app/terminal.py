@@ -3,11 +3,11 @@ import sys
 import logging
 from cref import sequence
 from cref.sequence.alignment import Blast
-from cref.structure import pdb, torsions
+from cref.structure import PDB, torsions
 
 
 def run_cref(aa_sequence):
-    pdb_downloader = pdb.PDBDownloader('data/pdb')
+    pdb_downloader = PDB.PDBDownloader('data/pdb')
     blast = Blast(db='tests/blastdb/pdbseqres')
     for fragment in sequence.fragment(aa_sequence):
         print(fragment)
@@ -18,8 +18,10 @@ def run_cref(aa_sequence):
                 torsion_angles = torsions.backbone_torsion_angles(
                     'data/pdb/pdb{}.ent'.format(result.pdb_code))
                 for hit in result.hits:
-                    print(hit['start'], hit['end'], hit['gaps'])
-                    print(torsion_angles[hit['start']:hit['end']])
+                    print(hit)
+                    print(
+                        torsion_angles[hit['subject_start'] - 1:
+                                       hit['subject_end']])
             except Exception as error:
                 logging.error("Could not download " + result.pdb_code)
                 logging.error(error)
