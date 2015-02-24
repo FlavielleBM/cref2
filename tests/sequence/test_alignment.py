@@ -1,5 +1,5 @@
 import unittest
-import mock
+from unittest import mock
 from io import StringIO
 from cref.sequence.alignment import Blast
 
