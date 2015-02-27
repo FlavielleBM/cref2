@@ -7,10 +7,14 @@ from Bio.Blast import NCBIWWW
 class BlastResult:
 
     def __init__(self, pdb_code, hsps):
-        self.pdb_code = pdb_code[:4].lower()
+        self.pdb_code, self.chain = pdb_code.split('_')
+        self.pdb_code = self.pdb_code.lower()
         self.hits = []
         for hsp in hsps:
             self.hits.append({
+                'query': hsp.query,
+                'match': hsp.match,
+                'subject': hsp.sbjct,
                 'query_start': hsp.query_start,
                 'query_end': hsp.query_end,
                 'subject_start': hsp.sbjct_start,
@@ -81,9 +85,11 @@ class Blast:
         :param sequence: String containing the sequence
         :param local: True if the blast should be perfomed locally
         """
+        import pdb; pdb.set_trace()
         if self.db:
             res = self._local_blast(sequence)
-            results = {BlastResult(a.hit_def, a.hsps) for a in res.alignments}
+            results = {BlastResult(a.hit_def.split()[0], a.hsps)
+                       for a in res.alignments}
         else:
             res = self._web_blast(sequence)
             results = {BlastResult(a.accession, a.hsps) for a in res.alignments}

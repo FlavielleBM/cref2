@@ -8,7 +8,7 @@ def fragment(sequence, size=5):
 
     :return: a fragment of the sequence with the given size
     """
-    if size > 0 and len(sequence) > size:
+    if size > 0 and len(sequence) >= size:
         for i in range(len(sequence) - size + 1):
             yield sequence[i: i + size]
     else:

@@ -16,12 +16,20 @@ def run_cref(aa_sequence):
             try:
                 pdb_downloader.retrieve(result.pdb_code)
                 torsion_angles = torsions.backbone_torsion_angles(
-                    'data/pdb/pdb{}.ent'.format(result.pdb_code))
+                    result.pdb_code,
+                    result.chain,
+                    'data/pdb/pdb{}.ent'.format(result.pdb_code)
+                )
                 for hit in result.hits:
-                    print(hit)
+                    print(hit['query'], hit['subject'], hit['match'])
+                    print(hit['query_start'], hit['query_end'])
+                    print(hit['subject_start'], hit['subject_end'])
                     print(
                         torsion_angles[hit['subject_start'] - 1:
                                        hit['subject_end']])
+                    print(result.chain)
+                    print(torsion_angles)
+                import pdb; pdb.set_trace()
             except Exception as error:
                 logging.error("Could not download " + result.pdb_code)
                 logging.error(error)
