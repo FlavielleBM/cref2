@@ -21,16 +21,18 @@ def backbone_torsion_angles(pdb_code, pdb_chain, pdb_filepath):
         (res, phi, psi)
     """
     structure = Bio.PDB.PDBParser().get_structure(pdb_code, pdb_filepath)
-    angles = []
+    residues = ''
+    phi_angles = []
+    psi_angles = []
     for model in structure:
         chain = model[pdb_chain]
         polypeptides = Bio.PDB.CaPPBuilder().build_peptides(chain)
         for polypeptide in polypeptides:
             phi_psi = polypeptide.get_phi_psi_list()
             # Convert to degrees
-            phi = [degrees(phi) if phi else None for phi, _ in phi_psi]
-            psi = [degrees(psi) if psi else None for _, psi in phi_psi]
+            phi_angles += [degrees(phi) if phi else None for phi, _ in phi_psi]
+            psi_angles += [degrees(psi) if psi else None for _, psi in phi_psi]
             # Get one letter code
-            residues = [three_to_one(aa.get_resname()) for aa in polypeptide]
-            angles = list(zip(residues, phi, psi))
-    return angles
+            residues += ''.join(
+                [three_to_one(aa.resname) for aa in polypeptide])
+    return dict(residues=residues, phi=phi_angles, psi=psi_angles)

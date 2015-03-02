@@ -85,7 +85,6 @@ class Blast:
         :param sequence: String containing the sequence
         :param local: True if the blast should be perfomed locally
         """
-        import pdb; pdb.set_trace()
         if self.db:
             res = self._local_blast(sequence)
             results = {BlastResult(a.hit_def.split()[0], a.hsps)
