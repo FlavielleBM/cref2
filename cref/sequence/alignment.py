@@ -51,7 +51,7 @@ class Blast:
             'cmd': 'blastp',
             'task': 'blastp',
             'outfmt': 5,
-            'num_alignments': 500,
+            'num_alignments': 300,
             'db': self.db,
             'evalue': 200000,
             'word_size': 2,

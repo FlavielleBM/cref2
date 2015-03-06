@@ -3,22 +3,20 @@ import Bio.PDB
 from Bio.PDB.Polypeptide import three_to_one
 
 
-def backbone_torsion_angles(pdb_code, pdb_chain, pdb_filepath):
+def backbone_dihedral_angles(pdb_code, pdb_chain, pdb_filepath):
     """
-    Wrapper around Torsions
+    The backbone dihedral angles of proteins are called φ (phi, involving
+    the backbone atoms C'-N-Cα-C'), ψ (psi, involving the backbone atoms
+    N-Cα-C'-N) and ω (omega, involving the backbone atoms Cα-C'-N-Cα).
 
-    Torsions is a simple program to read a PDB file and calculate backbone
-    torsion angles. It calculates phi, psi and omega and can also calculate
-    C-alpha pseudo-torsions.
-
-    See http://www.bioinf.org.uk/software/torsions/
+    We *only* obtain phi and psi angles.
 
     :param pdb_code: Identifier for the pdb
     :param pdb_chain: Identifier for the chain inside the model
-    :param pdb_filepath: Path to the pdb file used as input to torsions
+    :param pdb_filepath: Path to the pdb file used as input
 
-    :return: List of tuples of torsion residues and torsion angles
-        (res, phi, psi)
+    :return: List residues and torsion angles
+        [residues, phi, psi]
     """
     structure = Bio.PDB.PDBParser().get_structure(pdb_code, pdb_filepath)
     residues = ''
