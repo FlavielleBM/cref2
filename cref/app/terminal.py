@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+
+import os
 import sys
 import logging
 import warnings
 from math import floor
-from collections import OrderedDict
-import matplotlib.pyplot as plt
-import pandas
+
 from cref import sequence
 from cref.sequence.alignment import Blast
-from cref.structure import PDB, torsions
+from cref.structure import PDB, torsions, plot
+from cref.structure import predict_secondary_structure, write_pdb
+from cref.structure.clustering import cluster_torsion_angles
 
 
 class TerminalApp:
@@ -17,47 +19,10 @@ class TerminalApp:
         self.pdb_downloader = PDB.PDBDownloader('data/pdb')
         self.blast = Blast(db='tests/blastdb/pdbseqres')
         self.fragment_size = 5
-        self.ramachandran_densities = pandas.read_csv(
-            'data/rama500-general.data',
-            skiprows=6,
-            delimiter=' ',
-            names=['phi', 'psi', 'value']
-        )
-
-    def plot_ramachandran(self):
-        densities = self.ramachandran_densities
-        fontsize = 18
-        ticks = [-180, -90, 0, 90, 180]
-        plt.contourf(
-            list(OrderedDict.fromkeys(densities['phi'])),
-            list(OrderedDict.fromkeys(densities['psi'])),
-            densities['value'].reshape(180, 180).T,
-            levels=[0, 0.0005, 0.02, 1],
-            colors=['#FFFFFF', '#B3E8FF', '#7FD9FF']
-        )
-        plt.xlabel('$\phi$', fontsize=fontsize)
-        plt.ylabel('$\psi$', fontsize=fontsize)
-        plt.xticks(ticks)
-        plt.yticks(ticks)
-        plt.tick_params(direction="out")
-        plt.margins(0.05)
-        ax = plt.axes()
-        ax.spines['right'].set_color('none')
-        ax.spines['top'].set_color('none')
-        ax.spines['left'].set_smart_bounds(True)
-        ax.spines['bottom'].set_smart_bounds(True)
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-
-    def plot_angles(self, torsion_angles, fragment):
-        self.plot_ramachandran()
-        plt.title("Ramachandran plot for " + fragment)
-        plt.scatter(
-            torsion_angles['phi'], torsion_angles['psi'],  cmap="b", marker='.')
-        plt.show()
+        self.central = floor(self.fragment_size / 2)
 
     def get_central_angles(self, angles, hit):
-        central = floor(self.fragment_size / 2)
+        central = self.central
         pos = central - hit['query_start'] + 1
         subject_start = angles['residues'].find(hit['subject'])
 
@@ -69,19 +34,26 @@ class TerminalApp:
         return ('', 0, 0)
 
     def run(self, aa_sequence):
+        fragment_angles = []
         for fragment in sequence.fragment(aa_sequence, self.fragment_size):
             torsion_angles = dict(residues='', phi=[], psi=[])
             blast_results = self.blast.align(fragment)
 
             for blast_result in blast_results:
                 try:
-                    self.pdb_downloader.retrieve(blast_result.pdb_code)
+                    pdb_file = 'data/pdb/pdb{}.ent'.format(
+                        blast_result.pdb_code)
+                    if not os.path.isfile(pdb_file):
+                        self.pdb_downloader.retrieve(blast_result.pdb_code)
+
+                    # Silence pdb reader warnings
                     warnings.simplefilter("ignore")
                     angles = torsions.backbone_dihedral_angles(
                         blast_result.pdb_code,
                         blast_result.chain,
-                        'data/pdb/pdb{}.ent'.format(blast_result.pdb_code)
+                        pdb_file
                     )
+
                     for hit in blast_result.hits:
                         residue, phi, psi = self.get_central_angles(angles, hit)
                         if residue:
@@ -93,7 +65,13 @@ class TerminalApp:
                     logging.error("Could not download " + blast_result.pdb_code)
                     logging.error(error)
 
-            self.plot_angles(torsion_angles, fragment)
+            plot.ramachandran(torsion_angles, fragment)
+            secondary_structure = predict_secondary_structure(fragment)
+            clusters = cluster_torsion_angles(torsion_angles)
+            central_angles = clusters[secondary_structure[self.central]]
+            fragment_angles.append(central_angles)
+        print(aa_sequence, fragment_angles)
+        write_pdb(aa_sequence, fragment_angles, self.central, 'test.pdb')
 
 
 if __name__ == '__main__':
