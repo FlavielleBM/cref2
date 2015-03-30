@@ -15,6 +15,7 @@ class BlastResult:
                 'query': hsp.query,
                 'match': hsp.match,
                 'subject': hsp.sbjct,
+                'identities': hsp.identities,
                 'query_start': hsp.query_start,
                 'query_end': hsp.query_end,
                 'subject_start': hsp.sbjct_start,

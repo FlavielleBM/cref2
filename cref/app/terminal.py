@@ -18,7 +18,7 @@ class TerminalApp:
     def __init__(self):
         self.pdb_downloader = PDB.PDBDownloader('data/pdb')
         self.blast = Blast(db='tests/blastdb/pdbseqres')
-        self.fragment_size = 5
+        self.fragment_size = 7
         self.central = floor(self.fragment_size / 2)
 
     def get_central_angles(self, angles, hit):
@@ -26,15 +26,15 @@ class TerminalApp:
         pos = central - hit['query_start'] + 1
         subject_start = angles['residues'].find(hit['subject'])
 
-        if pos >= 0 and subject_start >= 0 and \
-                hit['subject'][central] == hit['query'][central]:
+        if pos >= 0 and subject_start >= 0:
             pos = subject_start + pos
             return (
                 angles['residues'][pos], angles['psi'][pos], angles['phi'][pos])
-        return ('', 0, 0)
+        return ('', None, None)
 
     def run(self, aa_sequence):
         fragment_angles = []
+        phi_psi_table = []
         for fragment in sequence.fragment(aa_sequence, self.fragment_size):
             torsion_angles = dict(residues='', phi=[], psi=[])
             blast_results = self.blast.align(fragment)
@@ -56,7 +56,18 @@ class TerminalApp:
 
                     for hit in blast_result.hits:
                         residue, phi, psi = self.get_central_angles(angles, hit)
-                        if residue:
+                        if phi and psi:
+                            phi_psi_table.append((
+                                blast_result.pdb_code,
+                                blast_result.chain,
+                                fragment,
+                                hit['subject'],
+                                hit['identities'],
+                                hit['score'],
+                                phi,
+                                psi
+                            ))
+
                             torsion_angles['residues'] += residue
                             torsion_angles['psi'].append(phi)
                             torsion_angles['phi'].append(psi)
@@ -70,7 +81,12 @@ class TerminalApp:
             clusters = cluster_torsion_angles(torsion_angles)
             central_angles = clusters[secondary_structure[self.central]]
             fragment_angles.append(central_angles)
-        print(aa_sequence, fragment_angles)
+
+        phi_psi_table.sort(key=lambda x: x[4], reverse=True)
+        print("PDB\tChain\tFrag\tSubj\tIdent\tScore\tPHI\tPSI")
+        for item in phi_psi_table:
+            print("%s\t%s\t%s\t%s\t%d\t% .2f\t% .2f\t% .2f" % item)
+
         write_pdb(aa_sequence, fragment_angles, self.central, 'test.pdb')
 
 
