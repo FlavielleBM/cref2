@@ -9,31 +9,16 @@ class BlastResult:
     def __init__(self, pdb_code, hsps):
         self.pdb_code, self.chain = pdb_code.split('_')
         self.pdb_code = self.pdb_code.lower()
-        self.hits = []
-        for hsp in hsps:
-            self.hits.append({
-                'query': hsp.query,
-                'match': hsp.match,
-                'subject': hsp.sbjct,
-                'identities': hsp.identities,
-                'query_start': hsp.query_start,
-                'query_end': hsp.query_end,
-                'subject_start': hsp.sbjct_start,
-                'subject_end': hsp.sbjct_end,
-                'score': hsp.score,
-                'bit score': hsp.bits,
-                'e-value': hsp.expect,
-                'gaps': hsp.gaps,
-            })
+        self.hsps = hsps
 
     def __eq__(self, other):
-        return self.pdb_code == other.pdb_code and self.hits == other.hits
+        return self.pdb_code == other.pdb_code and self.hsps == other.hsps
 
     def __hash__(self):
-        return hash((self.pdb_code, (tuple(x.items()) for x in self.hits)))
+        return hash((self.pdb_code, (tuple(x.items()) for x in self.hsps)))
 
     def __repr__(self):
-        return '{}:\n{}'.format(self.pdb_code, self.hits)
+        return '{}:\n{}'.format(self.pdb_code, self.hsps)
 
 
 def BlastError(Exception):
@@ -52,11 +37,11 @@ class Blast:
             'cmd': 'blastp',
             'task': 'blastp',
             'outfmt': 5,
-            'num_alignments': 300,
+            'num_alignments': 100,
             'db': self.db,
             'evalue': 200000,
             'word_size': 2,
-            'gapopen': 9,
+            'gapopen': 10,
             'gapextend': 1,
             'matrix': 'PAM30',
         }
@@ -72,8 +57,8 @@ class Blast:
             'matrix_name': 'PAM30',
             'word_size': 2,
             'expect': 200000,
-            'hitlist_size': 500,
-            'gapcosts': '9 1',
+            'hitlist_size': 100,
+            'gapcosts': '10 1',
             'filter': "F",
             'genetic_code': 1
         }

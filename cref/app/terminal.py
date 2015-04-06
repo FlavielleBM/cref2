@@ -9,8 +9,10 @@ from math import floor
 from cref import sequence
 from cref.sequence.alignment import Blast
 from cref.structure import PDB, torsions, plot
-from cref.structure import predict_secondary_structure, write_pdb
+from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
+from cref.structure.secondary import (SecondaryStructureBD,
+                                      predict_secondary_structure)
 
 
 class TerminalApp:
@@ -21,10 +23,10 @@ class TerminalApp:
         self.fragment_size = 7
         self.central = floor(self.fragment_size / 2)
 
-    def get_central_angles(self, angles, hit):
+    def get_central_angles(self, angles, hsp):
         central = self.central
-        pos = central - hit['query_start'] + 1
-        subject_start = angles['residues'].find(hit['subject'])
+        pos = central - hsp.query_start + 1
+        subject_start = angles['residues'].find(hsp.sbjct)
 
         if pos >= 0 and subject_start >= 0:
             pos = subject_start + pos
@@ -35,8 +37,10 @@ class TerminalApp:
     def run(self, aa_sequence):
         fragment_angles = []
         phi_psi_table = []
+        ss_bd = SecondaryStructureBD()
+
         for fragment in sequence.fragment(aa_sequence, self.fragment_size):
-            torsion_angles = dict(residues='', phi=[], psi=[])
+            torsion_angles = []
             blast_results = self.blast.align(fragment)
 
             for blast_result in blast_results:
@@ -54,38 +58,47 @@ class TerminalApp:
                         pdb_file
                     )
 
-                    for hit in blast_result.hits:
-                        residue, phi, psi = self.get_central_angles(angles, hit)
+                    for hsp in blast_result.hsps:
+                        residue, phi, psi = self.get_central_angles(angles, hsp)
                         if phi and psi:
+                            hsp_seq, hsp_ss = ss_bd.retrieve(
+                                blast_result.pdb_code,
+                                blast_result.chain
+                            )
+                            start = hsp.sbjct_start - hsp.query_start
+                            end = hsp.sbjct_end + self.fragment_size - (
+                                hsp.query_end)
                             phi_psi_table.append((
                                 blast_result.pdb_code,
                                 blast_result.chain,
                                 fragment,
-                                hit['subject'],
-                                hit['identities'],
-                                hit['score'],
+                                hsp.sbjct,
+                                hsp_seq[start:end],
+                                hsp_ss[start:end],
+                                hsp.identities,
+                                hsp.score,
                                 phi,
                                 psi
                             ))
-
-                            torsion_angles['residues'] += residue
-                            torsion_angles['psi'].append(phi)
-                            torsion_angles['phi'].append(psi)
+                            structure = hsp_ss[start + self.central]
+                            identity = self.fragment_size / hsp.identities
+                            torsion_angles.append((residue, phi, psi, identity, structure))
 
                 except Exception as error:
                     logging.error("Could not download " + blast_result.pdb_code)
                     logging.error(error)
 
-            plot.ramachandran(torsion_angles, fragment)
+            torsion_angles.sort(key=lambda x: x[3], reverse=True)
+            plot.ramachandran(torsion_angles[:10], fragment)
             secondary_structure = predict_secondary_structure(fragment)
             clusters = cluster_torsion_angles(torsion_angles)
             central_angles = clusters[secondary_structure[self.central]]
             fragment_angles.append(central_angles)
 
-        phi_psi_table.sort(key=lambda x: x[4], reverse=True)
-        print("PDB\tChain\tFrag\tSubj\tIdent\tScore\tPHI\tPSI")
+        phi_psi_table.sort(key=lambda x: x[6], reverse=True)
+        print("PDB\tChain\tFrag\tSubj\tSeq\tStruct\tIdent\tScore\tPHI\tPSI")
         for item in phi_psi_table:
-            print("%s\t%s\t%s\t%s\t%d\t% .2f\t% .2f\t% .2f" % item)
+            print("%s\t%s\t%s\t%s\t%s\t%s\t%d\t% .2f\t% .2f\t% .2f" % item)
 
         write_pdb(aa_sequence, fragment_angles, self.central, 'test.pdb')
 
@@ -94,5 +107,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         app = TerminalApp()
         app.run(sys.argv[1])
+
+        # import cProfile
+        # cProfile.run('app.run(sys.argv[1])')
     else:
         print('Syntax: cref <aminoacid sequence>')

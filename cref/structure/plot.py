@@ -11,7 +11,35 @@ _ramachandran_densities = pandas.read_csv(
     names=['phi', 'psi', 'value']
 )
 
+"""
+DSSP output:
+    H = α-helix
+    B = residue in isolated β-bridge
+    E = extended strand, participates in β ladder
+    G = 3-helix (310 helix)
+    I = 5 helix (π-helix)
+    T = hydrogen bonded turn
+    S = bend
+
+Colors extracted from rcsb.org.
+"""
+
+DSSP_to_color = {
+    'H': '#ED6161',
+    'B': '#CCA200',
+    'E': '#FFFB00',
+    'G': '#FFC2C2',
+    'I': '#900000',
+    'T': '#990099',
+    'S': '#0000FF',
+    '-': 'black',
+}
+
+
 def ramachandran_surface():
+    """
+    Plot density surface for generic ramachandran
+    """
     fontsize = 18
     ticks = [-180, -90, 0, 90, 180]
     plt.contourf(
@@ -45,6 +73,17 @@ def ramachandran(torsion_angles, fragment):
     """
     ramachandran_surface()
     plt.title("Ramachandran plot for " + fragment)
+    phi = [x[1] for x in torsion_angles]
+    psi = [x[2] for x in torsion_angles]
+    identity = [x[3] for x in torsion_angles]
+    structure = [x[4] for x in torsion_angles]
     plt.scatter(
-        torsion_angles['phi'], torsion_angles['psi'],  cmap="b", marker='.')
+        x=psi,
+        y=phi,
+        s=[20 ** x for x in identity],
+        c=[DSSP_to_color[ss] for ss in structure],
+        cmap="seismic",
+        marker='o',
+        alpha=0.5,
+    )
     plt.show()
