@@ -64,7 +64,7 @@ def ramachandran_surface():
     ax.yaxis.set_ticks_position('left')
 
 
-def ramachandran(torsion_angles, fragment):
+def ramachandran(torsion_angles, fragment, central):
     """
     Plot ramachandran of a set of torsion angles for a given fragment
 
@@ -73,14 +73,11 @@ def ramachandran(torsion_angles, fragment):
     """
     ramachandran_surface()
     plt.title("Ramachandran plot for " + fragment)
-    phi = torsion_angles['phi']
-    psi = torsion_angles['psi']
-    identity = torsion_angles['identity']
-    structure = [x[3] for x in torsion_angles['structure']]
+    structure = [x[central] for x in torsion_angles['structure']]
     plt.scatter(
-        x=psi,
-        y=phi,
-        s=[20 ** x for x in identity],
+        x=torsion_angles['phi'],
+        y=torsion_angles['psi'],
+        s=[1.05 ** x for x in torsion_angles['identity']],
         c=[DSSP_to_color[ss] for ss in structure],
         cmap="seismic",
         marker='o',

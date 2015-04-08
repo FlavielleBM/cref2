@@ -1,3 +1,4 @@
+import warnings
 from math import degrees
 import Bio.PDB
 from Bio.PDB.Polypeptide import three_to_one
@@ -18,6 +19,8 @@ def backbone_dihedral_angles(pdb_code, pdb_chain, pdb_filepath):
     :return: List residues and torsion angles
         [residues, phi, psi]
     """
+    # Silence pdb reader warnings
+    warnings.simplefilter("ignore")
     structure = Bio.PDB.PDBParser().get_structure(pdb_code, pdb_filepath)
     residues = ''
     phi_angles = []
