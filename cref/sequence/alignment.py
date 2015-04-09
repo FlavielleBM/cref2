@@ -41,9 +41,11 @@ class Blast:
             'db': self.db,
             'evalue': 200000,
             'word_size': 2,
-            'gapopen': 10,
-            'gapextend': 1,
             'matrix': 'PAM30',
+            'comp_based_stats': 'F',
+            'window_size': 40,
+            'threshold': 11,
+            'ungapped': True
         }
         blastp = NcbiblastpCommandline(**args)
         output, error = blastp(stdin=sequence)
