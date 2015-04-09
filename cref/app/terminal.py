@@ -36,8 +36,9 @@ class TerminalApp:
 
     def get_hsp_structure(self, pdb, chain, fragment, hsp, angles):
         residue, phi, psi = self.get_central_angles(angles, hsp)
-        if phi and psi:
-            hsp_seq, hsp_ss = self.ss_bd.retrieve(pdb, chain)
+        ss_bd_result = self.ss_bd.retrieve(pdb, chain)
+        if phi and psi and ss_bd_result:
+            hsp_seq, hsp_ss = ss_bd_result
             start = hsp.sbjct_start - hsp.query_start
             end = hsp.sbjct_end + self.fragment_size - (
                 hsp.query_end)
@@ -53,8 +54,8 @@ class TerminalApp:
                 structure=hsp_ss[start:end],
                 identity=identity,
                 score=hsp.score,
-                phi=phi,
-                psi=psi,
+                phi=round(phi, 2),
+                psi=round(psi, 2),
             )
 
     def get_structures_for_blast(self, fragment, blast_results):
@@ -77,6 +78,7 @@ class TerminalApp:
                         blast_structures.append(structure)
 
             except Exception as error:
+                import pdb; pdb.set_trace()
                 logging.error("Could not download " + pdb_code)
                 logging.error(error)
         return blast_structures
@@ -96,7 +98,7 @@ class TerminalApp:
             )
             blast_structures = blast_structures.sort(
                 ['identity', 'score'], ascending=[0,  0])
-            print(blast_structures)
+            print(blast_structures.to_string(index=False))
 
             plot.ramachandran(blast_structures, fragment, self.central)
             # secondary_structure = predict_secondary_structure(fragment)
@@ -110,6 +112,7 @@ class TerminalApp:
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         pandas.set_option('display.max_columns', 0)
+        pandas.set_option('display.max_rows', 200)
         app = TerminalApp()
         app.run(sys.argv[1])
 
