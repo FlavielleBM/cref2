@@ -63,13 +63,15 @@ class TerminalApp:
 
     def get_structures_for_blast(self, fragment, ss, blast_results):
         blast_structures = []
-        failed_pdbs = []
+        ignored_pdbs = []
+        with open('data/ignored_pdbs.txt', 'r') as ignored_pdbs_file:
+            ignored_pdbs = ignored_pdbs_file.read().splitlines()
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
             chain = blast_result.chain
             try:
-                if pdb_code not in failed_pdbs:
+                if pdb_code not in ignored_pdbs:
                     pdb_file = self.pdb_downloader.retrieve(pdb_code)
                     angles = torsions.backbone_torsion_angles(
                         pdb_file
@@ -81,11 +83,13 @@ class TerminalApp:
                             blast_structures.append(structure)
             except Exception as e:
                 logging.warn(e)
-                failed_pdbs.append(pdb_code)
+                ignored_pdbs.append(pdb_code)
 
+        with open('data/ignored_pdbs.txt', 'w') as ignored_pdbs_file:
+            ignored_pdbs = ignored_pdbs_file.write('\n'.join(ignored_pdbs))
         return blast_structures
 
-    def run(self, aa_sequence):
+    def run(self, aa_sequence, output_file):
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
 
@@ -114,27 +118,28 @@ class TerminalApp:
             )
             blast_structures = blast_structures.sort(
                 ['identity', 'score'], ascending=[0,  0])
-            print(blast_structures.to_string(index=False))
-            plot.ramachandran(blast_structures, fragment, self.central)
+            print('-' * 100)
+            print(blast_structures[:20].to_string(index=False))
+            # plot.ramachandran(blast_structures, fragment, self.central)
             clusters = cluster_torsion_angles(blast_structures)
             central_angles = clusters[ss[self.central]]
             dihedral_angles.append(central_angles)
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
-        write_pdb(aa_sequence, dihedral_angles, self.central, 'test.pdb')
+        write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
 
 
-def run_cref(aa_sequence, fragment_size=5):
+def run_cref(aa_sequence, output_file='output.pdb', fragment_size=5):
     pandas.set_option('display.max_columns', 0)
-    pandas.set_option('display.max_rows', 200)
+    pandas.set_option('display.max_rows', 5)
     app = TerminalApp(fragment_size)
-    app.run(aa_sequence)
+    app.run(aa_sequence, output_file)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         run_cref(sys.argv[1])
-    elif len(sys.argv) > 2:
-        run_cref(sys.argv[1], int(sys.argv[2]))
+    elif len(sys.argv) > 3:
+        run_cref(sys.argv[1], sys.argv[2], int(sys.argv[3]))
     else:
         print('Syntax: cref <aminoacid sequence>')
