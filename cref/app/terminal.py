@@ -89,12 +89,12 @@ class TerminalApp:
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
 
+        print('Seq:', aa_sequence)
+
         prediction = predict_secondary_structure(aa_sequence)
         ss = prediction.secondary_structure if prediction else None
-
-        print('Seq:', aa_sequence)
-        print('Str:', ss)
         ss_fragments = list(sequence.fragment(ss, self.fragment_size))
+        print('Str:', ss)
 
         for i, fragment in enumerate(sequence.fragment(
                 aa_sequence, self.fragment_size)):
@@ -125,14 +125,14 @@ class TerminalApp:
         write_pdb(aa_sequence, dihedral_angles, self.central, 'test.pdb')
 
 
+def run_cref(args):
+    pandas.set_option('display.max_columns', 0)
+    pandas.set_option('display.max_rows', 200)
+    app = TerminalApp()
+    app.run(args)
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        pandas.set_option('display.max_columns', 0)
-        pandas.set_option('display.max_rows', 200)
-        app = TerminalApp()
-        app.run(sys.argv[1])
-
-        # import cProfile
-        # cProfile.run('app.run(sys.argv[1])')
+        run_cref(sys.argv[1])
     else:
         print('Syntax: cref <aminoacid sequence>')
