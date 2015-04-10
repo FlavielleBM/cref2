@@ -1,8 +1,8 @@
 
 
-def cluster_torsion_angles(torsion_angles):
-    phi = torsion_angles[0][1]
-    psi = torsion_angles[0][2]
+def cluster_torsion_angles(blast_structures):
+    phi = blast_structures['phi'][0]
+    psi = blast_structures['psi'][0]
     return {
         'H': (phi, psi),
         'E': (phi, psi),

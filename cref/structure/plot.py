@@ -73,7 +73,7 @@ def ramachandran(torsion_angles, fragment, central):
     """
     ramachandran_surface()
     plt.title("Ramachandran plot for " + fragment)
-    structure = [x[central] for x in torsion_angles['structure']]
+    structure = [x[central] for x in torsion_angles['subject_ss']]
     plt.scatter(
         x=torsion_angles['phi'],
         y=torsion_angles['psi'],
