@@ -89,9 +89,16 @@ class TerminalApp:
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
 
-        for fragment in sequence.fragment(aa_sequence, self.fragment_size):
-            prediction = predict_secondary_structure(fragment)
-            ss = prediction.secondary_structure if prediction else None
+        prediction = predict_secondary_structure(aa_sequence)
+        ss = prediction.secondary_structure if prediction else None
+
+        print('Seq:', aa_sequence)
+        print('Str:', ss)
+        ss_fragments = list(sequence.fragment(ss, self.fragment_size))
+
+        for i, fragment in enumerate(sequence.fragment(
+                aa_sequence, self.fragment_size)):
+            ss = ss_fragments[i]
 
             blast_results = self.blast.align(fragment)
             blast_structures = self.get_structures_for_blast(
