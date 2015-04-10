@@ -2,6 +2,11 @@
 __pycache__/
 *.py[cod]
 
+# PDB data
+data/pdb
+# Torsions binary
+cref/structure/torsions
+
 # Rope project
 .ropeproject
 
