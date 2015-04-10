@@ -6,3 +6,6 @@ blastdb:
 torsions:
 	cc -o cref/structure/torsions cref/structure/torsions.c -lm
 
+peptide:
+	git clone git@github.com:mchelem/peptide.git
+
