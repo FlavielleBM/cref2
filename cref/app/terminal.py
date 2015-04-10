@@ -46,36 +46,42 @@ class TerminalApp:
             identity = round(
                 100 * (hsp.identities / self.fragment_size))
 
-            return dict(
-                pdb=pdb,
-                chain=chain,
-                fragment=fragment,
-                fragment_ss=ss,
-                subject=hsp.sbjct,
-                subject_full=hsp_seq[start:end],
-                subject_ss=hsp_ss[start:end],
-                identity=identity,
-                score=hsp.score,
-                phi=round(phi, 2),
-                psi=round(psi, 2),
-            )
+            if hsp_ss[start:end]:
+                return dict(
+                    pdb=pdb,
+                    chain=chain,
+                    fragment=fragment,
+                    fragment_ss=ss,
+                    subject=hsp.sbjct,
+                    subject_full=hsp_seq[start:end],
+                    subject_ss=hsp_ss[start:end],
+                    identity=identity,
+                    score=hsp.score,
+                    phi=round(phi, 2),
+                    psi=round(psi, 2),
+                )
 
     def get_structures_for_blast(self, fragment, ss, blast_results):
         blast_structures = []
+        failed_pdbs = []
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
             chain = blast_result.chain
-            pdb_file = self.pdb_downloader.retrieve(pdb_code)
-
-            angles = torsions.backbone_torsion_angles(
-                pdb_file
-            )
-            for hsp in blast_result.hsps:
-                structure = self.get_hsp_structure(
-                    pdb_code, chain, fragment, ss, hsp, angles)
-                if structure:
-                    blast_structures.append(structure)
+            try:
+                if pdb_code not in failed_pdbs:
+                    pdb_file = self.pdb_downloader.retrieve(pdb_code)
+                    angles = torsions.backbone_torsion_angles(
+                        pdb_file
+                    )
+                    for hsp in blast_result.hsps:
+                        structure = self.get_hsp_structure(
+                            pdb_code, chain, fragment, ss, hsp, angles)
+                        if structure:
+                            blast_structures.append(structure)
+            except Exception as e:
+                logging.warn(e)
+                failed_pdbs.append(pdb_code)
 
         return blast_structures
 
