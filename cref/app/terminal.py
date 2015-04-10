@@ -17,10 +17,10 @@ from cref.structure.secondary import (SecondaryStructureDB,
 
 class TerminalApp:
 
-    def __init__(self):
+    def __init__(self, fragment_size=5):
         self.pdb_downloader = PDB.PDBDownloader('data/pdb')
         self.blast = Blast(db='tests/blastdb/pdbseqres')
-        self.fragment_size = 7
+        self.fragment_size = fragment_size
         self.central = floor(self.fragment_size / 2)
         self.ss_db = SecondaryStructureDB()
 
@@ -119,14 +119,16 @@ class TerminalApp:
         write_pdb(aa_sequence, dihedral_angles, self.central, 'test.pdb')
 
 
-def run_cref(args):
+def run_cref(aa_sequence, fragment_size=5):
     pandas.set_option('display.max_columns', 0)
     pandas.set_option('display.max_rows', 200)
-    app = TerminalApp()
-    app.run(args)
+    app = TerminalApp(fragment_size)
+    app.run(aa_sequence)
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         run_cref(sys.argv[1])
+    elif len(sys.argv) > 2:
+        run_cref(sys.argv[1], int(sys.argv[2]))
     else:
         print('Syntax: cref <aminoacid sequence>')
