@@ -1,6 +1,5 @@
-# import porter_paleale
-
-
+from peptide import PeptideBuilder
+import Bio.PDB
 
 
 def write_pdb(aa_sequence, fragment_angles, gap_length, filepath):
@@ -12,4 +11,8 @@ def write_pdb(aa_sequence, fragment_angles, gap_length, filepath):
     :param gap_length: Length of the gap at the sequence start and end
     :param filepath: Path to the file to save the pdb
     """
-    pass
+    phi, psi = zip(*fragment_angles)
+    structure = PeptideBuilder.make_structure(aa_sequence, phi, psi)
+    out = Bio.PDB.PDBIO()
+    out.set_structure(structure)
+    out.save(filepath)
