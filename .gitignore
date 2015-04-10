@@ -6,6 +6,8 @@ __pycache__/
 data/pdb
 # Torsions binary
 cref/structure/torsions
+#DB
+ss.db
 
 # Rope project
 .ropeproject
