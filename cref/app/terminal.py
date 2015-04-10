@@ -64,25 +64,19 @@ class TerminalApp:
         blast_structures = []
 
         for blast_result in blast_results:
-            try:
-                pdb_code = blast_result.pdb_code
-                chain = blast_result.chain
-                pdb_file = self.pdb_downloader.retrieve(pdb_code)
+            pdb_code = blast_result.pdb_code
+            chain = blast_result.chain
+            pdb_file = self.pdb_downloader.retrieve(pdb_code)
 
-                angles = torsions.backbone_dihedral_angles(
-                    pdb_code,
-                    chain,
-                    pdb_file
-                )
-                for hsp in blast_result.hsps:
-                    structure = self.get_hsp_structure(
-                        pdb_code, chain, fragment, ss, hsp, angles)
-                    if structure:
-                        blast_structures.append(structure)
+            angles = torsions.backbone_torsion_angles(
+                pdb_file
+            )
+            for hsp in blast_result.hsps:
+                structure = self.get_hsp_structure(
+                    pdb_code, chain, fragment, ss, hsp, angles)
+                if structure:
+                    blast_structures.append(structure)
 
-            except Exception as error:
-                logging.error("Could not download " + pdb_code)
-                logging.error(error)
         return blast_structures
 
     def run(self, aa_sequence):
