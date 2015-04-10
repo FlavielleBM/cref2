@@ -120,7 +120,7 @@ class TerminalApp:
                 ['identity', 'score'], ascending=[0,  0])
             print('-' * 100)
             print(blast_structures[:20].to_string(index=False))
-            # plot.ramachandran(blast_structures, fragment, self.central)
+            plot.ramachandran(blast_structures, fragment, self.central)
             clusters = cluster_torsion_angles(blast_structures)
             central_angles = clusters[ss[self.central]]
             dihedral_angles.append(central_angles)

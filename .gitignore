@@ -6,6 +6,8 @@ __pycache__/
 data/pdb
 # Torsions binary
 cref/structure/torsions
+# Blast database
+blastdb
 
 # Rope project
 .ropeproject
