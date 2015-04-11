@@ -17,10 +17,10 @@ from cref.structure.secondary import (SecondaryStructureDB,
 
 class TerminalApp:
 
-    def __init__(self):
+    def __init__(self, fragment_size=5):
         self.pdb_downloader = PDB.PDBDownloader('data/pdb')
         self.blast = Blast(db='tests/blastdb/pdbseqres')
-        self.fragment_size = 7
+        self.fragment_size = fragment_size
         self.central = floor(self.fragment_size / 2)
         self.ss_db = SecondaryStructureDB()
 
@@ -46,40 +46,50 @@ class TerminalApp:
             identity = round(
                 100 * (hsp.identities / self.fragment_size))
 
-            return dict(
-                pdb=pdb,
-                chain=chain,
-                fragment=fragment,
-                fragment_ss=ss,
-                subject=hsp.sbjct,
-                subject_full=hsp_seq[start:end],
-                subject_ss=hsp_ss[start:end],
-                identity=identity,
-                score=hsp.score,
-                phi=round(phi, 2),
-                psi=round(psi, 2),
-            )
+            if hsp_ss[start:end]:
+                return dict(
+                    pdb=pdb,
+                    chain=chain,
+                    fragment=fragment,
+                    fragment_ss=ss,
+                    subject=hsp.sbjct,
+                    subject_full=hsp_seq[start:end],
+                    subject_ss=hsp_ss[start:end],
+                    identity=identity,
+                    score=hsp.score,
+                    phi=round(phi, 2),
+                    psi=round(psi, 2),
+                )
 
     def get_structures_for_blast(self, fragment, ss, blast_results):
         blast_structures = []
+        ignored_pdbs = []
+        with open('data/ignored_pdbs.txt', 'r') as ignored_pdbs_file:
+            ignored_pdbs = ignored_pdbs_file.read().splitlines()
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
             chain = blast_result.chain
-            pdb_file = self.pdb_downloader.retrieve(pdb_code)
+            try:
+                if pdb_code not in ignored_pdbs:
+                    pdb_file = self.pdb_downloader.retrieve(pdb_code)
+                    angles = torsions.backbone_torsion_angles(
+                        pdb_file
+                    )
+                    for hsp in blast_result.hsps:
+                        structure = self.get_hsp_structure(
+                            pdb_code, chain, fragment, ss, hsp, angles)
+                        if structure:
+                            blast_structures.append(structure)
+            except Exception as e:
+                logging.warn(e)
+                ignored_pdbs.append(pdb_code)
 
-            angles = torsions.backbone_torsion_angles(
-                pdb_file
-            )
-            for hsp in blast_result.hsps:
-                structure = self.get_hsp_structure(
-                    pdb_code, chain, fragment, ss, hsp, angles)
-                if structure:
-                    blast_structures.append(structure)
-
+        with open('data/ignored_pdbs.txt', 'w') as ignored_pdbs_file:
+            ignored_pdbs = ignored_pdbs_file.write('\n'.join(ignored_pdbs))
         return blast_structures
 
-    def run(self, aa_sequence):
+    def run(self, aa_sequence, output_file):
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
 
@@ -108,7 +118,8 @@ class TerminalApp:
             )
             blast_structures = blast_structures.sort(
                 ['identity', 'score'], ascending=[0,  0])
-            print(blast_structures.to_string(index=False))
+            print('-' * 100)
+            print(blast_structures[:20].to_string(index=False))
             plot.ramachandran(blast_structures, fragment, self.central)
             clusters = cluster_torsion_angles(blast_structures)
             central_angles = clusters[ss[self.central]]
@@ -116,17 +127,19 @@ class TerminalApp:
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
-        write_pdb(aa_sequence, dihedral_angles, self.central, 'test.pdb')
+        write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
 
 
-def run_cref(args):
+def run_cref(aa_sequence, output_file='output.pdb', fragment_size=5):
     pandas.set_option('display.max_columns', 0)
-    pandas.set_option('display.max_rows', 200)
-    app = TerminalApp()
-    app.run(args)
+    pandas.set_option('display.max_rows', 5)
+    app = TerminalApp(fragment_size)
+    app.run(aa_sequence, output_file)
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         run_cref(sys.argv[1])
+    elif len(sys.argv) > 3:
+        run_cref(sys.argv[1], sys.argv[2], int(sys.argv[3]))
     else:
         print('Syntax: cref <aminoacid sequence>')

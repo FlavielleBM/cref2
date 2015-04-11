@@ -8,6 +8,8 @@ data/pdb
 cref/structure/torsions
 #DB
 ss.db
+# Blast database
+blastdb
 
 # Rope project
 .ropeproject
