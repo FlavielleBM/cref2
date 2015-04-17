@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 import os
-import gzip
 import requests
 
-from cref.structure.secondary import SecondaryStructureBD
+from cref.structure.secondary import SecondaryStructureDB
 
 
 def download_ss(filename):
@@ -17,11 +16,11 @@ def download_ss(filename):
 
 
 def save_ss_to_db(filename):
-    with gzip.open(filename, 'rb') as ss_file:
+    with open(filename, 'r') as ss_file:
         i = 0
         sequence = ''
         structure = ''
-        line = ss_file.readline().decode('utf-8')
+        line = ss_file.readline()
 
         while line:
             if line.startswith('>'):
@@ -29,15 +28,15 @@ def save_ss_to_db(filename):
                 pdb = parts[0][1:]
                 chain = parts[1]
 
-                line = ss_file.readline().decode('utf-8')
+                line = ss_file.readline()
                 while line and not line.startswith('>'):
                     sequence += line
-                    line = ss_file.readline().decode('utf-8')
+                    line = ss_file.readline()
 
-                line = ss_file.readline().decode('utf-8')
+                line = ss_file.readline()
                 while line and not line.startswith('>'):
                     structure += line
-                    line = ss_file.readline().decode('utf-8')
+                    line = ss_file.readline()
 
                 structure = structure.replace('\n', '')
                 structure = structure.replace(' ', '-')
@@ -50,9 +49,8 @@ def save_ss_to_db(filename):
 
 
 if __name__ == '__main__':
-    filename = "ss.txt.gz"
-    db = SecondaryStructureBD()
+    import sys
+    db = SecondaryStructureDB(sys.argv[2])
     db.create()
-    download_ss(filename)
-    save_ss_to_db(filename)
+    save_ss_to_db(sys.argv[1])
     db.close()

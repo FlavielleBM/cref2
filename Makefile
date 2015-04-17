@@ -14,5 +14,10 @@ packages:
 	sudo apt-get install -y liblapack-dev gcc gfortran
 	sudo apt-get install -y ncbi-blast+
 
-install: packages peptide torsions blastdb
+ss:
+	wget http://www.rcsb.org/pdb/files/ss.txt.gz -O data/ss.txt.gz
+	cd data && gunzip ss.txt.gz && \
+	python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db
+
+install: packages peptide torsions blastdb ss
 	pip install -r requirements.txt

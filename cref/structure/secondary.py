@@ -37,7 +37,7 @@ class SecondaryStructureDB(Database):
         parent.execute(
             """
             CREATE TABLE IF NOT EXISTS pdb_ss (
-                pdb text primary key, chain text,
+                pdb text, chain text,
                 sequence text, secondary_structure text
             )
             """
