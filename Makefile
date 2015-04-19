@@ -3,6 +3,10 @@ blastdb:
 	cd tests/blastdb && gunzip -f pdb_seqres.txt.gz && \
 	makeblastdb -in pdb_seqres.txt -out pdbseqres -dbtype prot	
 
+download_pdb:
+	rsync -rlpt -v -z --delete --port=33444 \
+		rsync.wwpdb.org::ftp_data/structures/divided/pdb/ .data/pdb
+
 torsions:
 	cc -o cref/structure/torsions cref/structure/torsions.c -lm
 
