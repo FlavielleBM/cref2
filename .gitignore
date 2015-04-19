@@ -1,15 +1,21 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
+# Project specifics
 
 # PDB data
 data/pdb
 # Torsions binary
 cref/structure/torsions
-#DB
-ss.db
+# Secondary structure DB
+data/ss.db
 # Blast database
-blastdb
+data/blastdb
+# Peptide library
+peptide/
+# Virtualenv
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 
 # Rope project
 .ropeproject
