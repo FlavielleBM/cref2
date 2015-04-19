@@ -27,5 +27,6 @@ ss:
 	wget http://www.rcsb.org/pdb/files/ss.txt.gz -O data/ss.txt.gz
 	cd data && gunzip -f ss.txt.gz
 	bash -i -c "source venv/bin/activate && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
+	rm -rf data/ss.txt
 
 install: packages python_packages peptide torsions blastdb ss
