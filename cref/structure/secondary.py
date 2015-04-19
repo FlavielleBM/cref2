@@ -100,7 +100,7 @@ class PredictionCache(Database):
 
 
 # Cache for predicted secondary structures
-prediction_cache = PredictionCache()
+prediction_cache = PredictionCache('data/ss.db')
 prediction_cache.create()
 
 
