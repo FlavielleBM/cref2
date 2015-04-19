@@ -1,6 +1,6 @@
 blastdb:
 	wget ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz -O tests/blastdb/pdb_seqres.txt.gz
-	cd tests/blastdb && gunzip pdb_seqres.txt.gz && \
+	cd tests/blastdb && gunzip -f pdb_seqres.txt.gz && \
 	makeblastdb -in pdb_seqres.txt -out pdbseqres -dbtype prot	
 
 torsions:
@@ -21,7 +21,7 @@ packages:
 
 ss:
 	wget http://www.rcsb.org/pdb/files/ss.txt.gz -O data/ss.txt.gz
-	cd data && gunzip ss.txt.gz
-	bash -i -c "workon cref && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
+	cd data && gunzip -f ss.txt.gz
+	bash -i -c "source venv/bin/activate && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
 
 install: packages python_packages peptide torsions blastdb ss
