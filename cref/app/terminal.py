@@ -19,7 +19,7 @@ class TerminalApp:
 
     def __init__(self, fragment_size=5):
         self.pdb_downloader = PDB.PDBDownloader('data/pdb')
-        self.blast = Blast(db='tests/blastdb/pdbseqres')
+        self.blast = Blast(db='data/blastdb/pdbseqres')
         self.fragment_size = fragment_size
         self.central = floor(self.fragment_size / 2)
         self.ss_db = SecondaryStructureDB()

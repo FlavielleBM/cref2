@@ -7,7 +7,7 @@ from cref.sequence.alignment import Blast
 class AlignmentTestCase(unittest.TestCase):
 
     def test_blast_local(self):
-        blast = Blast('tests/blastdb/pdbseqres')
+        blast = Blast('data/blastdb/pdbseqres')
         results = blast.align('AASSF')
         pdbs = {result.pdb_code for result in results}
         self.assertIn('1o61', pdbs)
