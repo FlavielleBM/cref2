@@ -24,10 +24,10 @@ python_packages:
 	bash -i -c "source env/bin/activate && pip install -r requirements.txt"
 
 packages:
-	sudo apt-get install -y tcl-dev tk-dev
+	sudo apt-get install -y tcl8.4-dev tk8.4-dev libpng3
 	sudo apt-get install -y liblapack-dev gcc gfortran
 	sudo apt-get install -y ncbi-blast+
-	sudo apt-get install -y python3 python3-dev python-virtualenv
+	sudo apt-get install -y python3 python3-dev python3-tk python-virtualenv
 
 ss:
 	wget http://www.rcsb.org/pdb/files/ss.txt.gz -O data/ss.txt.gz
