@@ -59,15 +59,16 @@ class TerminalApp:
                     subject=hsp.sbjct,
                     subject_full=hsp_seq[start:end],
                     subject_ss=hsp_ss[start:end],
+                    central_ss=hsp_ss[start:end][self.central],
                     identity=identity,
                     score=hsp.score,
                     phi=round(phi, 2),
                     psi=round(psi, 2),
                 )
 
-    def get_structures_for_blast(self, fragment, ss, blast_results):
+    def get_structures_for_blast(self, fragment, ss,
+                                 blast_results, failed_pdbs):
         blast_structures = []
-        failed_pdbs = []
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
@@ -96,6 +97,7 @@ class TerminalApp:
     def run(self, aa_sequence, output_file):
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
+        failed_pdbs = []
 
         print('Seq:', aa_sequence)
 
@@ -110,23 +112,26 @@ class TerminalApp:
 
             blast_results = self.blast.align(fragment)
             blast_structures = self.get_structures_for_blast(
-                fragment, ss, blast_results)
+                fragment, ss, blast_results, failed_pdbs)
 
             blast_structures = pandas.DataFrame(
                 blast_structures,
                 columns=[
                     'pdb', 'chain', 'fragment', 'subject', 'subject_full',
-                    'fragment_ss', 'subject_ss', 'identity', 'score',
-                    'phi', 'psi'
+                    'fragment_ss', 'subject_ss', 'central_ss', 'identity',
+                    'score', 'phi', 'psi'
                 ]
             )
             blast_structures = blast_structures.sort(
                 ['identity', 'score'], ascending=[0,  0])
             print('-' * 100)
             print(blast_structures[:20].to_string(index=False))
-            plot.ramachandran(blast_structures, fragment, self.central)
+            # plot.ramachandran(blast_structures, fragment, self.central)
             clusters = cluster_torsion_angles(blast_structures)
-            central_angles = clusters[ss[self.central]]
+            if ss[self.central] in clusters:
+                central_angles = clusters[ss[self.central]]
+            else:
+                central_angles = (None, None)
             dihedral_angles.append(central_angles)
 
         # Amino acids in the end have unbound angles

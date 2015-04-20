@@ -37,7 +37,7 @@ class Blast:
             'cmd': 'blastp',
             'task': 'blastp',
             'outfmt': 5,
-            'num_alignments': 100,
+            'num_alignments': 300,
             'db': self.db,
             'evalue': 200000,
             'word_size': 2,
@@ -60,7 +60,7 @@ class Blast:
             'matrix_name': 'PAM30',
             'word_size': 2,
             'expect': 200000,
-            'hitlist_size': 100,
+            'hitlist_size': 300,
             'gapcosts': '10 1',
             'filter': "F",
             'genetic_code': 1

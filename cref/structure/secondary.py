@@ -3,6 +3,25 @@ import sqlite3
 import porter_paleale
 
 
+_dssp_to_porter = {
+    'H': 'H',  # Alpha helix
+    'G': 'H',  # 3-10 helix
+    'I': 'H',  # Pi helix
+    'E': 'E',  # Extended strand
+    'B': 'E',  # Beta bridge
+    'T': 'C',  # Turn
+    'S': 'C',  # Bend
+}
+
+
+def dssp_to_porter(structure):
+    """
+    Convert DSSP secondary structure to Porter
+    See: http://distillf.ucd.ie/porterpaleale/quickhelp.html
+    """
+    return _dssp_to_porter.get(structure, 'C')
+
+
 class Database:
     """
     Wrapper around the database
@@ -122,7 +141,6 @@ class SecondaryStructurePredictor:
             S = bend
         """
         return self.pdb_db.retrieve(pdb, chain)
-
 
     def porter(self, sequence):
         """
