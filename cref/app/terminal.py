@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import logging
 from math import floor
 
@@ -66,15 +67,18 @@ class TerminalApp:
 
     def get_structures_for_blast(self, fragment, ss, blast_results):
         blast_structures = []
-        ignored_pdbs = []
+        failed_pdbs = []
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
             chain = blast_result.chain
             try:
-                if pdb_code not in ignored_pdbs:
-                    pdb_file = self.pdb_downloader.retrieve_pdb_file(pdb_code)
-                    # pdb_file = 'data/pdb/{}/pdb{}.ent'.format(pdb_code[1:3], pdb_code)
+                if pdb_code not in failed_pdbs:
+                    pdb_file = 'data/pdb/{}/pdb{}.ent'.format(
+                        pdb_code[1:3], pdb_code)
+                    if not os.path.isfile(pdb_file):
+                        raise Exception('PDB not available for ' + pdb_code)
+
                     angles = torsions.backbone_torsion_angles(
                         pdb_file
                     )
@@ -84,7 +88,7 @@ class TerminalApp:
                         if structure:
                             blast_structures.append(structure)
             except Exception as e:
-                ignored_pdbs.append(pdb_code)
+                failed_pdbs.append(pdb_code)
                 logging.warn(e)
 
         return blast_structures
