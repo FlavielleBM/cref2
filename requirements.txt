@@ -14,4 +14,5 @@ responses==0.3.0
 scikit-learn==0.16.0
 six==1.9.0
 termcolor==1.1.0
+scipy==0.15.1
 -e git://github.com/mchelem/porter_paleale.git#egg=porter_paleale
