@@ -66,21 +66,25 @@ class TerminalApp:
 
     def get_structures_for_blast(self, fragment, ss, blast_results):
         blast_structures = []
+        ignored_pdbs = []
 
         for blast_result in blast_results:
             pdb_code = blast_result.pdb_code
             chain = blast_result.chain
             try:
-                pdb_file = self.pdb_downloader.retrieve_pdb_file(pdb_code)
-                angles = torsions.backbone_torsion_angles(
-                    pdb_file
-                )
-                for hsp in blast_result.hsps:
-                    structure = self.get_hsp_structure(
-                        pdb_code, chain, fragment, ss, hsp, angles)
-                    if structure:
-                        blast_structures.append(structure)
+                if pdb_code not in ignored_pdbs:
+                    pdb_file = self.pdb_downloader.retrieve_pdb_file(pdb_code)
+                    # pdb_file = 'data/pdb/{}/pdb{}.ent'.format(pdb_code[1:3], pdb_code)
+                    angles = torsions.backbone_torsion_angles(
+                        pdb_file
+                    )
+                    for hsp in blast_result.hsps:
+                        structure = self.get_hsp_structure(
+                            pdb_code, chain, fragment, ss, hsp, angles)
+                        if structure:
+                            blast_structures.append(structure)
             except Exception as e:
+                ignored_pdbs.append(pdb_code)
                 logging.warn(e)
 
         return blast_structures
