@@ -1,11 +1,13 @@
 blastdb:
-	wget ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz -O tests/blastdb/pdb_seqres.txt.gz
-	cd tests/blastdb && gunzip -f pdb_seqres.txt.gz && \
+	mkdir -p data/blastdb
+	wget ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz -O data/blastdb/pdb_seqres.txt.gz
+	cd data/blastdb && gunzip -f pdb_seqres.txt.gz && \
 	makeblastdb -in pdb_seqres.txt -out pdbseqres -dbtype prot	
+	rm -rf data/pdb_seqres.txt
 
 download_pdb:
 	rsync -rlpt -v -z --delete --port=33444 \
-		rsync.wwpdb.org::ftp_data/structures/divided/pdb/ .data/pdb
+		rsync.wwpdb.org::ftp_data/structures/divided/pdb/ data/pdb/
 
 torsions:
 	cc -o cref/structure/torsions cref/structure/torsions.c -lm
