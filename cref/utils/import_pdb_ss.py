@@ -3,7 +3,7 @@
 import os
 import requests
 
-from cref.structure.secondary import SecondaryStructureDB
+from cref.structure.secondary import PDBSecondaryStructureDB
 
 
 def download_ss(filename):
@@ -50,7 +50,7 @@ def save_ss_to_db(filename):
 
 if __name__ == '__main__':
     import sys
-    db = SecondaryStructureDB(sys.argv[2])
+    db = PDBSecondaryStructureDB(sys.argv[2])
     db.create()
     save_ss_to_db(sys.argv[1])
     db.close()

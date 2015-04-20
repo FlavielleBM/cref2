@@ -27,13 +27,13 @@ class Database:
         self.conn.close()
 
 
-class PDBPredictionDatabase(Database):
+class PDBSecondaryStructureDB(Database):
     """
     Wrapper around the database for secondary structures
     """
 
     def create(self):
-        parent = super(PDBPredictionDatabase, self)
+        parent = super(PDBSecondaryStructureDB, self)
         parent.execute(
             """
             CREATE TABLE IF NOT EXISTS pdb_ss (
@@ -49,13 +49,13 @@ class PDBPredictionDatabase(Database):
         )
 
     def save(self, pdb, chain, sequence, structure):
-        super(PDBPredictionDatabase, self).execute(
+        super(PDBSecondaryStructureDB, self).execute(
             "INSERT INTO pdb_ss VALUES ('{}', '{}', '{}', '{}')".format(
                 pdb, chain, sequence, structure)
         )
 
     def retrieve(self, pdb, chain):
-        return super(PDBPredictionDatabase, self).retrieve(
+        return super(PDBSecondaryStructureDB, self).retrieve(
             """
             SELECT sequence, secondary_structure FROM pdb_ss
                 WHERE pdb = '{}' AND chain = '{}'
@@ -63,13 +63,13 @@ class PDBPredictionDatabase(Database):
         )
 
 
-class PorterPredictionDatabase(Database):
+class PorterSecondaryStructureDB(Database):
     """
     Cache secondary structure predictions
     """
 
     def create(self):
-        parent = super(PorterPredictionDatabase, self)
+        parent = super(PorterSecondaryStructureDB, self)
         parent.execute(
             """
             CREATE TABLE IF NOT EXISTS predicted_ss (
@@ -85,13 +85,13 @@ class PorterPredictionDatabase(Database):
         )
 
     def save(self, sequence, structure, accessibility):
-        super(PredictionCache, self).execute(
+        super(PorterSecondaryStructureDB, self).execute(
             "INSERT INTO predicted_ss VALUES ('{}', '{}', '{}')".format(
                 sequence.upper(), structure, accessibility)
         )
 
     def retrieve(self, sequence):
-        return super(PorterPredictionDatabase, self).retrieve(
+        return super(PorterSecondaryStructureDB, self).retrieve(
             """
             SELECT secondary_structure, solvent_accessibility FROM predicted_ss
                 WHERE sequence = '{}'
@@ -102,9 +102,9 @@ class PorterPredictionDatabase(Database):
 class SecondaryStructurePredictor:
 
     def __init__(self, database='data/ss.db'):
-        self.porter_db = PorterPredictionDatabase(database)
+        self.porter_db = PorterSecondaryStructureDB(database)
         self.porter_db.create()
-        self.pdb_db = PDBPredictionDatabase(database)
+        self.pdb_db = PDBSecondaryStructureDB(database)
 
     def pdb_dssp(self, pdb, chain):
         """
