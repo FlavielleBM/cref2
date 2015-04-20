@@ -20,8 +20,8 @@ peptide:
 	git clone https://github.com/mchelem/peptide
 
 python_packages:
-	virtualenv --python=/usr/bin/python3 venv
-	bash -i -c "source venv/bin/activate && pip install -r requirements.txt"
+	virtualenv --python=/usr/bin/python3 env
+	bash -i -c "source env/bin/activate && pip install -r requirements.txt"
 
 packages:
 	sudo apt-get install -y tcl-dev tk-dev
@@ -32,7 +32,7 @@ packages:
 ss:
 	wget http://www.rcsb.org/pdb/files/ss.txt.gz -O data/ss.txt.gz
 	cd data && gunzip -f ss.txt.gz
-	bash -i -c "source venv/bin/activate && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
+	bash -i -c "source env/bin/activate && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
 	rm -rf data/ss.txt
 
 install: packages python_packages peptide torsions blastdb ss
