@@ -5,24 +5,24 @@ import logging
 from math import floor
 
 import pandas
+from Bio.PDB import PDBList
 
 from cref import sequence
 from cref.sequence.alignment import Blast
-from cref.structure import PDB, torsions, plot
+from cref.structure import torsions, plot
 from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
-from cref.structure.secondary import (SecondaryStructureDB,
-                                      predict_secondary_structure)
+from cref.structure.secondary import SecondaryStructurePredictor
 
 
 class TerminalApp:
 
     def __init__(self, fragment_size=5):
-        self.pdb_downloader = PDB.PDBDownloader('data/pdb')
+        self.pdb_downloader = PDBList(pdb='data/pdb')
         self.blast = Blast(db='data/blastdb/pdbseqres')
         self.fragment_size = fragment_size
         self.central = floor(self.fragment_size / 2)
-        self.ss_db = SecondaryStructureDB()
+        self.ss_predictor = SecondaryStructurePredictor()
 
     def get_central_angles(self, angles, hsp):
         central = self.central
@@ -32,14 +32,17 @@ class TerminalApp:
         if pos >= 0 and subject_start >= 0:
             pos = subject_start + pos
             return (
-                angles['residues'][pos], angles['phi'][pos], angles['psi'][pos])
+                angles['residues'][pos],
+                angles['phi'][pos],
+                angles['psi'][pos]
+            )
         return ('', None, None)
 
     def get_hsp_structure(self, pdb, chain, fragment, ss, hsp, angles):
         residue, phi, psi = self.get_central_angles(angles, hsp)
-        ss_db_result = self.ss_db.retrieve(pdb, chain)
-        if phi and psi and ss_db_result:
-            hsp_seq, hsp_ss = ss_db_result
+        pdb_dssp_result = self.ss_predictor.pdb_dssp(pdb, chain)
+        if phi and psi and pdb_dssp_result:
+            hsp_seq, hsp_ss = pdb_dssp_result
             start = hsp.sbjct_start - hsp.query_start
             end = hsp.sbjct_end + self.fragment_size - (
                 hsp.query_end)
@@ -72,7 +75,7 @@ class TerminalApp:
             chain = blast_result.chain
             try:
                 if pdb_code not in ignored_pdbs:
-                    pdb_file = self.pdb_downloader.retrieve(pdb_code)
+                    pdb_file = self.pdb_downloader.retrieve_pdb_file(pdb_code)
                     angles = torsions.backbone_torsion_angles(
                         pdb_file
                     )
@@ -95,7 +98,7 @@ class TerminalApp:
 
         print('Seq:', aa_sequence)
 
-        prediction = predict_secondary_structure(aa_sequence)
+        prediction = self.ss_predictor.porter(aa_sequence)
         ss = prediction.secondary_structure if prediction else None
         ss_fragments = list(sequence.fragment(ss, self.fragment_size))
         print('Str:', ss)
