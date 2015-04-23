@@ -10,7 +10,7 @@ from Bio.PDB import PDBList
 
 from cref import sequence
 from cref.sequence.alignment import Blast
-from cref.structure import torsions, plot
+from cref.structure import torsions  # , plot
 from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
 from cref.structure.secondary import SecondaryStructurePredictor
@@ -137,13 +137,14 @@ class TerminalApp:
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
+        return os.path.abspath(output_file)
 
 
 def run_cref(aa_sequence, output_file='output.pdb', fragment_size=5):
     pandas.set_option('display.max_columns', 0)
     pandas.set_option('display.max_rows', 5)
     app = TerminalApp(fragment_size)
-    app.run(aa_sequence, output_file)
+    return app.run(aa_sequence, output_file)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
