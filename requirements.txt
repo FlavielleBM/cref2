@@ -1,18 +1,33 @@
+Babel==1.3
+Flask==0.10.1
+Jinja2==2.7.3
+MarkupSafe==0.23
+SQLAlchemy==1.0.1
+Werkzeug==0.10.4
+amqp==1.4.6
+anyjson==0.3.3
+billiard==3.3.0.20
 biopython==1.65
+celery==3.1.18
+certifi==14.05.14
 coverage==3.7.1
+flower==0.8.1
+itsdangerous==0.24
+kombu==3.0.26
 matplotlib==1.4.3
 mock==1.0.1
 nose==1.3.4
 nose-timer==0.4.3
 numpy==1.9.1
 pandas==0.16.0
+-e git://github.com/mchelem/porter_paleale.git@0803808487654b8122f89045ffa31b4fff5b6751#egg=porter_paleale-origin/master
 pyparsing==2.0.3
 python-dateutil==2.4.1
 pytz==2015.2
 requests==2.5.1
 responses==0.3.0
 scikit-learn==0.16.0
+scipy==0.15.1
 six==1.9.0
 termcolor==1.1.0
-scipy==0.15.1
--e git://github.com/mchelem/porter_paleale.git#egg=porter_paleale
+tornado==4.1
