@@ -36,16 +36,7 @@ def status(task_id):
     return success({'state': result.state})
 
 
-@app.route('/result/<task_id>')
-def result(task_id):
-    result = predict_structure.AsyncResult(task_id)
-    if result.ready():
-        return success({'pdb_file': result.get()})
-    else:
-        return failure('Task is pending')
-
-
-@app.route('/predictions/<task_id>/<path:filename>')
+@app.route('/prediction/<path:filename>')
 def download_file(filename):
     return flask.send_from_directory(
         '/home/mchelem/dev/cref2/predictions/',

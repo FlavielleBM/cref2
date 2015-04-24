@@ -94,23 +94,32 @@ class TerminalApp:
 
         return blast_structures
 
-    def run(self, aa_sequence, output_file):
+    def run(self, aa_sequence, output_dir, reporter):
+        reporter('STARTED')
+
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
         failed_pdbs = []
 
         print('Seq:', aa_sequence)
 
+        reporter('RUNNING_PORTER')
         prediction = self.ss_predictor.porter(aa_sequence)
         ss = prediction.secondary_structure if prediction else None
         ss_fragments = list(sequence.fragment(ss, self.fragment_size))
         print('Str:', ss)
+        with open(os.path.join(output_dir, 'secondary_structure.txt'), 'w') as \
+                sequence_file:
+            sequence_file.write(ss)
 
         for i, fragment in enumerate(sequence.fragment(
                 aa_sequence, self.fragment_size)):
             ss = ss_fragments[i]
 
+            reporter('RUNNING_BLAST')
             blast_results = self.blast.align(fragment)
+
+            reporter('RUNNING_TORSIONS')
             blast_structures = self.get_structures_for_blast(
                 fragment, ss, blast_results, failed_pdbs)
 
@@ -127,6 +136,8 @@ class TerminalApp:
             print('-' * 100)
             print(blast_structures[:20].to_string(index=False))
             # plot.ramachandran(blast_structures, fragment, self.central)
+
+            reporter('CLUSTERING')
             clusters = cluster_torsion_angles(blast_structures)
             if ss[self.central] in clusters:
                 central_angles = clusters[ss[self.central]]
@@ -136,19 +147,25 @@ class TerminalApp:
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
+        output_file = os.path.join(output_dir, 'predicted_structure.pdb')
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
         return os.path.abspath(output_file)
 
 
-def run_cref(aa_sequence, output_file='output.pdb', fragment_size=5):
+def terminal_reporter(state):
+    print(state.lower().replace('_', ' '))
+
+
+def run_cref(aa_sequence, output_dir, fragment_size=5,
+             reporter=terminal_reporter):
     pandas.set_option('display.max_columns', 0)
     pandas.set_option('display.max_rows', 5)
     app = TerminalApp(fragment_size)
-    return app.run(aa_sequence, output_file)
+    return app.run(aa_sequence, output_dir, reporter)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        run_cref(sys.argv[1])
+        run_cref(sys.argv[1], 'predictions/')
     elif len(sys.argv) > 3:
         run_cref(sys.argv[1], sys.argv[2], int(sys.argv[3]))
     else:
