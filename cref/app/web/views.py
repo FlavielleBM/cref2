@@ -19,8 +19,8 @@ def failure(reason='Unknown'):
 
 @app.route('/predict/', methods=['POST'])
 def predict():
-    sequence = flask.request.get_json(force=True)['sequence']
-    resp = predict_structure.delay(sequence)
+    params = flask.request.get_json(force=True)
+    resp = predict_structure.delay(params['sequence'])
     return success({'task_id': resp.id})
 
 
@@ -43,3 +43,11 @@ def result(task_id):
         return success({'pdb_file': result.get()})
     else:
         return failure('Task is pending')
+
+
+@app.route('/predictions/<task_id>/<path:filename>')
+def download_file(filename):
+    return flask.send_from_directory(
+        '/home/mchelem/dev/cref2/predictions/',
+        filename, as_attachment=True
+    )
