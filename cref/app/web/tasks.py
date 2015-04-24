@@ -4,7 +4,7 @@ from cref.app.terminal import run_cref
 
 app = Celery(
     'tasks',
-    backend='db+sqlite:///data/results.sqlite',
+    backend='db+sqlite:///data/task_results.sqlite',
     broker='amqp://guest@localhost//'
 )
 

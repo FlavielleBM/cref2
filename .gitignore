@@ -7,10 +7,14 @@ data/pdb
 cref/structure/torsions
 # Secondary structure DB
 data/ss.db
+# Prediction task results DB
+data/task_results.db
 # Blast database
 data/blastdb
 # Peptide library
 peptide/
+# Prediction results
+predictions/
 # Virtualenv
 env/
 
