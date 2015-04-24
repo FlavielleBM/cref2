@@ -37,3 +37,4 @@ ss:
 	rm -rf data/ss.txt
 
 install: packages python_packages peptide torsions blastdb ss
+	mkdir predictions
