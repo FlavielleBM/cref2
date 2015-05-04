@@ -68,7 +68,7 @@ def backbone_torsion_angles(pdb_filepath):
         try:
             residues += three_to_one(result[0][i])
         except Exception as e:
-            logging.info('Could not get one letter code for ' + result[0][i])
+            logging.debug('Could not get one letter code for ' + result[0][i])
         else:
             phi.append(float(result[1][i]))
             psi.append(float(result[2][i]))

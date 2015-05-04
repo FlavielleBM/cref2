@@ -19,6 +19,7 @@ def failure(reason='Unknown'):
 
 @app.route('/predict/', methods=['POST'])
 def predict():
+    print(flask.request.data)
     params = flask.request.get_json(force=True)
     resp = predict_structure.delay(params['sequence'])
     return success({'task_id': resp.id})
