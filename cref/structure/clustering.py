@@ -29,18 +29,24 @@ def secondary_structure_angles(model, structures):
         porter_ss = dssp_to_porter(ss)
         if porter_ss not in angles:
             angles[porter_ss] = model.cluster_centers_[k]
-    print(angles)
     return angles
 
 
-def cluster_torsion_angles(blast_structures, n_clusters=6):
+def cluster_torsion_angles(blast_structures, ss, n_clusters=6):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
     structures = blast_structures['central_ss']
+    # score = blast_structures['score']
+
     X = np.vstack((zip(phi, psi)))
 
-    model = KMeans(init='k-means++', n_clusters=6, n_init=10)
+    model = KMeans(init='k-means++', n_clusters=n_clusters, n_init=10)
     model.fit(X)
 
     # plot_clusters(model, X, blast_structures['fragment'][0])
-    return secondary_structure_angles(model, structures)
+    angles = secondary_structure_angles(model, structures)
+    if ss in angles:
+        return angles[ss]
+    else:
+        print('Could not find angles for ss ' + ss)
+        return angles.values()[0]
