@@ -16,6 +16,12 @@ pdb:
 torsions:
 	cc -o cref/structure/torsions cref/structure/torsions.c -lm
 
+scratch:
+	mkdir libs
+	cd libs && wget http://download.igb.uci.edu/SCRATCH-1D_1.0.tar.gz
+	cd libs && tar xvzf SCRATCH-1D_1.0.tar.gz
+	cd libs/SCRATCH-1D_1.0 && perl install.pl
+
 peptide:
 	git clone https://github.com/mchelem/peptide
 
