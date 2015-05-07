@@ -1,9 +1,10 @@
 import logging
 import sqlite3
 import porter_paleale
+from cref.libs import sspro
 
 
-_dssp_to_porter = {
+_ss_eight_to_three = {
     'H': 'H',  # Alpha helix
     'G': 'H',  # 3-10 helix
     'I': 'H',  # Pi helix
@@ -11,15 +12,39 @@ _dssp_to_porter = {
     'B': 'E',  # Beta bridge
     'T': 'C',  # Turn
     'S': 'C',  # Bend
+    'C': 'C',  # Other
+    '-': 'C',  # Other
+}
+
+_ss_similar = {
+    'H': ('G', 'I'),
+    'G': ('H', 'I'),
+    'I': ('H', 'G'),
+    'E': ('B',),
+    'B': ('E',),
+    'T': ('-', 'S'),
+    'S': ('-', 'T'),
+    'C': ('-', 'T', 'S'),
+    '-': ('C', 'T', 'S'),
 }
 
 
-def dssp_to_porter(structure):
+def ss_eight_to_three(structure):
     """
-    Convert DSSP secondary structure to Porter
-    See: http://distillf.ucd.ie/porterpaleale/quickhelp.html
+    Convert DSSP secondary structure to three letters code
+        H for Helix
+        E for Beta strand
+        C for Coil
     """
-    return _dssp_to_porter.get(structure, 'C')
+    if structure not in _ss_eight_to_three:
+        raise KeyError(structure + ' is not a valid secondary structure')
+    return _ss_eight_to_three[structure]
+
+
+def closest_ss(structure):
+    if structure not in _ss_similar:
+        raise KeyError(structure + ' is not a valid secondary structure')
+    return _ss_similar.get(structure, ('C'))
 
 
 class Database:
@@ -82,13 +107,13 @@ class PDBSecondaryStructureDB(Database):
         )
 
 
-class PorterSecondaryStructureDB(Database):
+class SecondaryStructureDB(Database):
     """
     Cache secondary structure predictions
     """
 
     def create(self):
-        parent = super(PorterSecondaryStructureDB, self)
+        parent = super(SecondaryStructureDB, self)
         parent.execute(
             """
             CREATE TABLE IF NOT EXISTS predicted_ss (
@@ -104,13 +129,13 @@ class PorterSecondaryStructureDB(Database):
         )
 
     def save(self, sequence, structure, accessibility):
-        super(PorterSecondaryStructureDB, self).execute(
+        super(SecondaryStructureDB, self).execute(
             "INSERT INTO predicted_ss VALUES ('{}', '{}', '{}')".format(
                 sequence.upper(), structure, accessibility)
         )
 
     def retrieve(self, sequence):
-        return super(PorterSecondaryStructureDB, self).retrieve(
+        return super(SecondaryStructureDB, self).retrieve(
             """
             SELECT secondary_structure, solvent_accessibility FROM predicted_ss
                 WHERE sequence = '{}'
@@ -121,8 +146,8 @@ class PorterSecondaryStructureDB(Database):
 class SecondaryStructurePredictor:
 
     def __init__(self, database='data/ss.db'):
-        self.porter_db = PorterSecondaryStructureDB(database)
-        self.porter_db.create()
+        self.prediction_db = SecondaryStructureDB(database)
+        self.prediction_db.create()
         self.pdb_db = PDBSecondaryStructureDB(database)
 
     def pdb_dssp(self, pdb, chain):
@@ -141,6 +166,22 @@ class SecondaryStructurePredictor:
             S = bend
         """
         return self.pdb_db.retrieve(pdb, chain)
+
+    def _predict(self, sequence, predictor):
+        prediction = self.prediction_db.retrieve(sequence)
+        if not prediction:
+            prediction = predictor(sequence)
+            if prediction:
+                self.prediction_db.save(
+                    sequence,
+                    prediction.secondary_structure,
+                    prediction.solvent_accessibility
+                )
+        else:
+            logging.info('Read cached secondary structure for ' + sequence)
+            prediction = porter_paleale.Prediction(
+                sequence, prediction[0], prediction[1])
+        return prediction
 
     def porter(self, sequence):
         """
@@ -161,17 +202,20 @@ class SecondaryStructurePredictor:
             e = somewhat exposed (>25% and <=50% accessible)
             E = very exposed     (>50% accessible)
         """
-        prediction = self.porter_db.retrieve(sequence)
-        if not prediction:
-            prediction = porter_paleale.predict(sequence)
-            if prediction:
-                self.porter_db.save(
-                    sequence,
-                    prediction.secondary_structure,
-                    prediction.solvent_accessibility
-                )
-        else:
-            logging.info('Read cached secondary structure for ' + sequence)
-            prediction = porter_paleale.Prediction(
-                sequence, prediction[0], prediction[1])
-        return prediction
+        return self._predict(sequence, porter_paleale.predict)
+
+    def sspro(self, sequence):
+        """
+        Predict the secondary structure of a given sequence
+
+        :param sequence: Amino acid sequence
+
+        :return Sequence and secondary structure, using the format:
+            B = residue in isolated β-bridge
+            E = extended strand, participates in β ladder
+            G = 3-helix (310 helix)
+            I = 5 helix (π-helix)
+            T = hydrogen bonded turn
+            S = bend
+        """
+        return self._predict(sequence, sspro.predict)

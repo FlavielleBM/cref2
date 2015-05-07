@@ -14,6 +14,7 @@ from cref.structure import torsions  # , plot
 from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
 from cref.structure.secondary import SecondaryStructurePredictor
+from cref.structure.secondary import ss_eight_to_three
 
 
 class TerminalApp:
@@ -23,7 +24,7 @@ class TerminalApp:
         self.blast = Blast(db='data/blastdb/pdbseqres')
         self.fragment_size = fragment_size
         self.central = floor(self.fragment_size / 2)
-        self.ss_predictor = SecondaryStructurePredictor()
+        self.ss_predictor = SecondaryStructurePredictor('data/ss.db')
 
     def get_central_angles(self, angles, hsp):
         central = self.central
@@ -103,17 +104,21 @@ class TerminalApp:
 
         print('Seq:', aa_sequence)
 
-        reporter('RUNNING_PORTER')
-        prediction = self.ss_predictor.porter(aa_sequence)
+        reporter('PREDICTING_SECONDARY_STRUCTURE')
+        prediction = self.ss_predictor.sspro(aa_sequence)
         ss = prediction.secondary_structure if prediction else None
         ss_fragments = list(sequence.fragment(ss, self.fragment_size))
-        print('Str:', ss)
+        print('SS:', ss)
         with open(os.path.join(output_dir, 'secondary_structure.txt'), 'w') as \
                 sequence_file:
-            sequence_file.write(ss)
+            sequence_file.write(''.join([ss_eight_to_three(x) for x in ss]))
 
-        for i, fragment in enumerate(sequence.fragment(
-                aa_sequence, self.fragment_size)):
+        fragments = list(sequence.fragment(aa_sequence, self.fragment_size))
+        fragments_len = len(fragments)
+        print("Number of fragments:", fragments_len)
+
+        for i, fragment in enumerate(fragments):
+            print ("Progress: {} of {} fragments".format(i + 1, fragments_len))
             ss = ss_fragments[i]
 
             reporter('RUNNING_BLAST')
