@@ -17,6 +17,8 @@ peptide/
 predictions/
 # Virtualenv
 env/
+# External libs
+libs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
