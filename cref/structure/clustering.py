@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
@@ -7,6 +9,8 @@ from scipy import sparse
 
 from cref.structure.plot import ramachandran_surface
 from cref.structure.secondary import ss_eight_to_three, closest_ss
+
+logger = logging.getLogger('CReF')
 
 
 def plot_clusters(model, X, fragment):
@@ -44,10 +48,11 @@ def select_cluster(angles, ss, select):
     if ss in angles:
         return angles[ss]
     else:
-        print('Could not find angles for ss ' + ss)
         for fallback_ss in closest_ss(ss) + ('C', 'H', 'E'):
             if fallback_ss in angles:
-                print('Using angles for {} instead'.format(fallback_ss))
+                logger.info(
+                    'Could not find angles for {}, using angles for {}'.format(
+                        ss, fallback_ss))
                 return angles[fallback_ss]
 
 
