@@ -134,15 +134,17 @@ class TerminalApp:
             blast_structures = blast_structures.sort(
                 ['identity', 'score'], ascending=[0,  0])
             print('-' * 100)
-            print(blast_structures[:20].to_string(index=False))
+            # print(blast_structures[:20].to_string(index=False))
             # plot.ramachandran(blast_structures, fragment, self.central)
 
             reporter('CLUSTERING')
-            clusters = cluster_torsion_angles(blast_structures)
-            if ss[self.central] in clusters:
-                central_angles = clusters[ss[self.central]]
-            else:
-                central_angles = (None, None)
+
+            # Use only first 100 for clustering
+            if len(blast_structures) > 100:
+                blast_structures = blast_structures[:100]
+
+            central_angles = cluster_torsion_angles(
+                blast_structures, ss[self.central])
             dihedral_angles.append(central_angles)
 
         # Amino acids in the end have unbound angles
@@ -153,7 +155,7 @@ class TerminalApp:
 
 
 def terminal_reporter(state):
-    print(state.lower().replace('_', ' '))
+    print(state[0] + state[1:].lower().replace('_', ' '))
 
 
 def run_cref(aa_sequence, output_dir, fragment_size=5,
