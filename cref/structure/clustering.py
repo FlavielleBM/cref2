@@ -56,7 +56,7 @@ def select_cluster(angles, ss, select):
                 return angles[fallback_ss]
 
 
-def cluster_torsion_angles(blast_structures, ss, n_clusters=6,
+def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
                            select="ss", ss_eight=True):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
