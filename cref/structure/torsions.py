@@ -5,6 +5,8 @@ from math import degrees
 import Bio.PDB
 from Bio.PDB.Polypeptide import three_to_one
 
+logger = logging.getLogger('CReF')
+
 
 def backbone_dihedral_angles(pdb_code, pdb_chain, pdb_filepath):
     """
@@ -57,9 +59,10 @@ def backbone_torsion_angles(pdb_filepath):
         './cref/structure/torsions',
         pdb_filepath,
     ])
-    lines = output.decode('utf-8').split('\n')[2:]  # from 2 to remove heading
+    lines = output.decode('utf-8').split('\n')[2:]  # remove heading
     result = [line.split()[1:] for line in lines[:-1]]
     result = list(zip(*result))
+
     residues = ''
     phi = []
     psi = []
@@ -68,7 +71,9 @@ def backbone_torsion_angles(pdb_filepath):
         try:
             residues += three_to_one(result[0][i])
         except Exception as e:
-            logging.debug('Could not get one letter code for ' + result[0][i])
+            logger.debug(
+                'Could not get one letter code for ' + result[0][i])
+            logger.debug(e)
         else:
             phi.append(float(result[1][i]))
             psi.append(float(result[2][i]))
