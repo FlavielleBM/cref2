@@ -22,7 +22,7 @@ default_params = dict(
         identity=0,
         pdbs=[],
     ),
-    maximum_target_sequences=100,
+    max_cluster_fragments=100,
     blast=dict(
         expect_threshold=1000,
         num_alignments=300,
@@ -32,6 +32,7 @@ default_params = dict(
             gap_costs='ungapped',
         ),
     ),
+    cache_torsions=True,
 )
 
 
@@ -41,11 +42,12 @@ class BaseApp:
         self.params = default_params.copy()
         self.params.update(params)
 
-        self.fragment_size = params['fragment_size']
+        self.fragment_size = self.params['fragment_size']
         self.central = math.floor(self.fragment_size / 2)
         self.blast = Blast(db='data/blastdb/pdbseqres')
         self.ss_predictor = SecondaryStructurePredictor('data/ss.db')
         self.failed_pdbs = []
+        self.torsions = {}
 
     def reporter(self, state):
         logger.info(state[0] + state[1:].lower().replace('_', ' '))
@@ -64,9 +66,9 @@ class BaseApp:
             )
         return ('', None, None)
 
-    def get_hsp_structure(self, pdb, chain, fragment, ss, hsp, angles):
+    def get_hsp_structure(self, fragment, ss, hsp, angles):
         residue, phi, psi = self.get_central_angles(angles, hsp)
-        pdb_dssp_result = self.ss_predictor.pdb_dssp(pdb, chain)
+        pdb_dssp_result = self.ss_predictor.pdb_dssp(hsp.pdb_code, hsp.chain)
         if phi and psi and pdb_dssp_result:
             hsp_seq, hsp_ss = pdb_dssp_result
             start = hsp.sbjct_start - hsp.query_start
@@ -77,8 +79,8 @@ class BaseApp:
 
             if hsp_ss[start:end]:
                 return dict(
-                    pdb=pdb,
-                    chain=chain,
+                    pdb=hsp.pdb_code,
+                    chain=hsp.chain,
                     fragment=fragment,
                     fragment_ss=ss,
                     subject=hsp.sbjct,
@@ -91,31 +93,39 @@ class BaseApp:
                     psi=round(psi, 2),
                 )
 
-    def get_structures_for_blast(self, fragment, ss,
-                                 blast_results):
+    def get_torsion_angles(self, pdb_code):
+        pdb_file = 'data/pdb/{}/pdb{}.ent'.format(pdb_code[1:3], pdb_code)
+        if not os.path.isfile(pdb_file):
+            raise IOError('PDB not available for ' + pdb_code)
+
+        if pdb_code not in self.torsions or not self.params['cache_torsions']:
+            angles = torsions.backbone_torsion_angles(
+                pdb_file
+            )
+            if self.params['cache_torsions']:
+                self.torsions[pdb_code] = angles
+        else:
+            angles = self.torsions[pdb_code]
+        return angles
+
+    def get_structures_for_blast(self, fragment, ss, hsps):
         blast_structures = []
-
-        for blast_result in blast_results:
-            pdb_code = blast_result.pdb_code
-            chain = blast_result.chain
-            try:
-                if pdb_code not in self.failed_pdbs:
-                    pdb_file = 'data/pdb/{}/pdb{}.ent'.format(
-                        pdb_code[1:3], pdb_code)
-                    if not os.path.isfile(pdb_file):
-                        raise IOError('PDB not available for ' + pdb_code)
-
-                    angles = torsions.backbone_torsion_angles(
-                        pdb_file
-                    )
-                    for hsp in blast_result.hsps:
+        hsps.sort(key=lambda hsp: (hsp.identities, hsp.score), reverse=True)
+        for hsp in hsps:
+            if len(blast_structures) < 100:
+                try:
+                    pdb_code = hsp.pdb_code
+                    if pdb_code not in self.failed_pdbs:
+                        angles = self.get_torsion_angles(pdb_code)
                         structure = self.get_hsp_structure(
-                            pdb_code, chain, fragment, ss, hsp, angles)
+                            fragment, ss, hsp, angles)
                         if structure:
                             blast_structures.append(structure)
-            except Exception as e:
-                self.failed_pdbs.append(pdb_code)
-                logger.warn(e)
+                except Exception as e:
+                    self.failed_pdbs.append(pdb_code)
+                    logger.warn(e)
+            else:
+                break
 
         return blast_structures
 
@@ -124,7 +134,8 @@ class BaseApp:
         prediction = self.ss_predictor.sspro(aa_sequence)
         ss = prediction.secondary_structure if prediction else None
         ss_fragments = list(sequence.fragment(ss, self.fragment_size))
-        logger.info('SS: ' + ss)
+        logger.info('Seq: ' + aa_sequence)
+        logger.info('Str: ' + ss)
         with open(os.path.join(output_dir, 'secondary_structure.txt'), 'w') as \
                 sequence_file:
             sequence_file.write(''.join([ss_eight_to_three(x) for x in ss]))
@@ -134,11 +145,11 @@ class BaseApp:
     def get_angles_for_fragment(self, fragment, ss):
         logger.info('Fragment: ' + fragment)
         self.reporter('RUNNING_BLAST')
-        blast_results = self.blast.align(fragment)
+        hsps = self.blast.align(fragment)
 
         self.reporter('RUNNING_TORSIONS')
         blast_structures = self.get_structures_for_blast(
-            fragment, ss, blast_results)
+            fragment, ss, hsps)
         blast_structures = pandas.DataFrame(
             blast_structures,
             columns=[
@@ -147,46 +158,47 @@ class BaseApp:
                 'score', 'phi', 'psi'
             ]
         )
-        blast_structures = blast_structures.sort(
-            ['identity', 'score'], ascending=[0,  0])
-        # print(blast_structures[:20].to_string(index=False))
+        # print(blast_structures[:10].to_string(index=False))
         # plot.ramachandran(blast_structures, fragment, self.central)
 
         self.reporter('CLUSTERING')
         if len(blast_structures) > 100:
             blast_structures = blast_structures[:100]
+        logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(blast_structures, ss[self.central])
 
+    def display_elapsed_time(self, start_time):
+        elapsed_time = time.time() - start_time
+        if elapsed_time > 60:
+            logger.info('Prediction took {} minutes'.format(elapsed_time / 60))
+        else:
+            logger.info('Prediction took {} seconds'.format(elapsed_time))
+
     def run(self, aa_sequence, output_dir):
-        start_time = time.time()
         self.reporter('STARTED')
+        start_time = time.time()
+
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(None, None)] * (self.central - 1)
-        logger.info('Seq: ' + aa_sequence)
 
         fragments_ss = self.get_secondary_structure(aa_sequence, output_dir)
         fragments = list(sequence.fragment(aa_sequence, self.fragment_size))
         fragments_len = len(fragments)
         logger.info("Number of fragments: {}".format(fragments_len))
-
-        logger.info('-' * 20)
+        logger.info('-' * 30)
         for i, fragment in enumerate(fragments):
             logger.info(
                 'Progress: {} of {} fragments'.format(i + 1, fragments_len))
             ss = fragments_ss[i]
             angles = self.get_angles_for_fragment(fragment, ss)
             dihedral_angles.append(angles)
-            logger.info('-' * 20)
+            logger.info('-' * 30)
 
-        self.reporter('WRITING_PDB')
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
+
+        self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
-
-        elapsed_time = time.time() - start_time
-        if elapsed_time > 60:
-            logger.info('Prediction took {} minutes'.format(elapsed_time / 60))
-        else:
-            logger.info('Prediction took {} seconds'.format(elapsed_time))
+        self.display_elapsed_time(start_time)
         return os.path.abspath(output_file)

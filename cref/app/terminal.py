@@ -26,7 +26,7 @@ def run_cref(aa_sequence, output_dir, params):
     pandas.set_option('display.max_rows', 5)
 
     if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
+        os.makedirs(output_dir)
 
     app = TerminalApp(params)
     return app.run(aa_sequence, output_dir)
@@ -96,8 +96,10 @@ def read_fasta(filepath):
 def predict_fasta(filepath, output_dir, params):
     sequences = read_fasta(filepath)
     for seq in sequences:
+        # Remove unknown aminoacids
+        sequence = str(seq.seq).replace('X', '')
         run_cref(
-            str(seq.seq),
+            sequence,
             os.path.join(output_dir, seq.id.split('|')[0]),
             params
         )
@@ -126,7 +128,7 @@ def read_config(module):
 
 
 def main():
-    params = {'fragment_size': 5}
+    params = {}
     args = parse_args()
     configure_logger(args.log_level)
     if args.config:
