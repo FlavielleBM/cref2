@@ -3,11 +3,16 @@
 import os
 import argparse
 import logging
+import importlib
+import tempfile
 
 import pandas
+import requests
 from Bio import SeqIO
 
 from cref.app import BaseApp
+
+logger = logging.getLogger('CReF')
 
 
 class TerminalApp(BaseApp):
@@ -16,14 +21,14 @@ class TerminalApp(BaseApp):
     """
 
 
-def run_cref(aa_sequence, output_dir, fragment_size=5):
+def run_cref(aa_sequence, output_dir, params):
     pandas.set_option('display.max_columns', 0)
     pandas.set_option('display.max_rows', 5)
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
-    app = TerminalApp(fragment_size)
+    app = TerminalApp(params)
     return app.run(aa_sequence, output_dir)
 
 
@@ -65,8 +70,8 @@ def parse_args():
         help='PDB Code from where the sequence will be extracted',
     )
     parser.add_argument(
-        '--parameters', dest='params',
-        help='File specifying the parameters'
+        '--config', dest='config',
+        help='File specifying the configurations'
     )
     parser.add_argument(
         '--output_dir', dest='output_dir',
@@ -88,33 +93,57 @@ def read_fasta(filepath):
     return records
 
 
-def download_fasta(pdb_code):
+def predict_fasta(filepath, output_dir, params):
+    sequences = read_fasta(filepath)
+    for seq in sequences:
+        run_cref(
+            str(seq.seq),
+            os.path.join(output_dir, seq.id.split('|')[0]),
+            params
+        )
+
+
+def download_fasta(pdb_code, filepath):
     """"""
+    url = ('http://www.rcsb.org/pdb'
+           '/files/fasta.txt?structureIdList=' + pdb_code.upper())
+    r = requests.get(url, stream=True)
+    with open(filepath, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+                f.flush()
+    return filepath
+
+
+def read_config(module):
+    try:
+        config = importlib.import_module(module)
+    except Exception as e:
+        logger.error(e)
+        raise Exception('Invalid config file')
+    return config
 
 
 def main():
+    params = {'fragment_size': 5}
     args = parse_args()
     configure_logger(args.log_level)
+    if args.config:
+        config = read_config(args.config)
+        params = config.params
     # Sequence input
     if args.sequence:
-        run_cref(args.sequence, args.output_dir)
+        run_cref(args.sequence, args.output_dir, params)
     # Fasta file input
     elif args.fasta:
-        sequences = read_fasta(args.fasta)
-        for seq in sequences:
-            run_cref(
-                str(seq.seq),
-                os.path.join(args.output_dir, seq.id.split('|')[0])
-            )
+        predict_fasta(args.fasta, args.output_dir, params)
     # PDB code input
     elif args.pdb:
-        fasta_file = download_fasta(args.pdb)
-        sequences = read_fasta(fasta_file)
-        for seq in sequences:
-            run_cref(
-                str(seq.seq),
-                os.path.join(args.output_dir, seq.id.split('|')[0])
-            )
+        handler, fasta_file = tempfile.mkstemp(suffix='.fasta', prefix='tmp')
+        download_fasta(args.pdb, fasta_file)
+        predict_fasta(fasta_file, args.output_dir, params)
+        os.remove(fasta_file)
     else:
         raise ValueError('You must specify a sequence, fasta file or pdb code')
 
