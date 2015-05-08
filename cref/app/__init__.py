@@ -1,7 +1,6 @@
 import os
 import time
 import logging
-import functools
 import math
 
 import pandas
@@ -16,11 +15,33 @@ from cref.structure.secondary import ss_eight_to_three
 
 logger = logging.getLogger('CReF')
 
+default_params = dict(
+    fragment_size=5,
+    number_of_clusters=8,
+    exclude=dict(
+        identity=0,
+        pdbs=[],
+    ),
+    maximum_target_sequences=100,
+    blast=dict(
+        expect_threshold=1000,
+        num_alignments=300,
+        word_size=2,
+        scoring=dict(
+            matrix='PAM30',
+            gap_costs='ungapped',
+        ),
+    ),
+)
+
 
 class BaseApp:
 
-    def __init__(self, fragment_size=5):
-        self.fragment_size = fragment_size
+    def __init__(self, params):
+        self.params = default_params.copy()
+        self.params.update(params)
+
+        self.fragment_size = params['fragment_size']
         self.central = math.floor(self.fragment_size / 2)
         self.blast = Blast(db='data/blastdb/pdbseqres')
         self.ss_predictor = SecondaryStructurePredictor('data/ss.db')
@@ -92,7 +113,7 @@ class BaseApp:
                             pdb_code, chain, fragment, ss, hsp, angles)
                         if structure:
                             blast_structures.append(structure)
-            except IOError as e:
+            except Exception as e:
                 self.failed_pdbs.append(pdb_code)
                 logger.warn(e)
 
@@ -107,6 +128,7 @@ class BaseApp:
         with open(os.path.join(output_dir, 'secondary_structure.txt'), 'w') as \
                 sequence_file:
             sequence_file.write(''.join([ss_eight_to_three(x) for x in ss]))
+        ss_fragments = [x.replace('C', '-') for x in ss_fragments]
         return ss_fragments
 
     def get_angles_for_fragment(self, fragment, ss):
@@ -164,9 +186,7 @@ class BaseApp:
 
         elapsed_time = time.time() - start_time
         if elapsed_time > 60:
-            logger.info('Prediction took {} minutes'.format(elapsed_time / 60.0)
+            logger.info('Prediction took {} minutes'.format(elapsed_time / 60))
         else:
-            logger.info('Prediction took {} seconds'.format(elapsed_time)
+            logger.info('Prediction took {} seconds'.format(elapsed_time))
         return os.path.abspath(output_file)
-
-def timeit(f
