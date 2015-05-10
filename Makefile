@@ -14,7 +14,7 @@ pdb:
 	gunzip -r data/pdb/
 
 torsions:
-	cc -o cref/structure/torsions cref/structure/torsions.c -lm
+	cc -o libs/torsions libs/torsions.c -lm
 
 scratch:
 	mkdir libs

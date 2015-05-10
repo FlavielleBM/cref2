@@ -3,8 +3,6 @@
 # PDB data
 data/pdb_rsync
 data/pdb
-# Torsions binary
-cref/structure/torsions
 # Secondary structure DB
 data/ss.db
 # Prediction task results DB
@@ -17,8 +15,10 @@ peptide/
 predictions/
 # Virtualenv
 env/
-# External libs
-libs/
+# SCRATCH
+libs/SCRATCH*
+# Torsions binary
+libs/torsions
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
