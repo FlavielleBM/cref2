@@ -1,24 +1,35 @@
+# ##################
 # Project specifics
 
-# PDB data
+# --- PDB files ---
 data/pdb_rsync
 data/pdb
+
+# --- Databases ---
 # Secondary structure DB
 data/ss.db
+# Torsions calculation cache DB
+data/torsions.db
 # Prediction task results DB
 data/task_results.db
 # Blast database
 data/blastdb
+
+# --- Other binaries ---
 # Peptide library
 peptide/
 # Prediction results
 predictions/
 # Virtualenv
 env/
+
+# --- Libs ---
 # SCRATCH
 libs/SCRATCH*
 # Torsions binary
 libs/torsions
+
+# #################
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
