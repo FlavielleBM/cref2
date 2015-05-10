@@ -1,7 +1,8 @@
 import logging
-import sqlite3
 import porter_paleale
+
 from cref.libs import sspro
+from cref.utils import Database
 
 
 _ss_eight_to_three = {
@@ -45,30 +46,6 @@ def closest_ss(structure):
     if structure not in _ss_similar:
         raise KeyError(structure + ' is not a valid secondary structure')
     return _ss_similar.get(structure, ('C'))
-
-
-class Database:
-    """
-    Wrapper around the database
-    """
-    def __init__(self, filename='data/ss.db'):
-        self.conn = sqlite3.connect(filename)
-
-    def execute(self, query):
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute(query)
-            self.conn.commit()
-        except sqlite3.OperationalError as e:
-            logging.info(e)
-
-    def retrieve(self, query):
-        cursor = self.conn.cursor()
-        cursor.execute(query)
-        return cursor.fetchone()
-
-    def close(self):
-        self.conn.close()
 
 
 class PDBSecondaryStructureDB(Database):
