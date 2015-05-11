@@ -21,13 +21,15 @@ def failure(reason='Unknown'):
 def predict():
     print(flask.request.data)
     params = flask.request.get_json(force=True)
-    resp = predict_structure.delay(params['sequence'])
+    if 'sequence' not in params:
+        return failure('You did not provide an input sequence')
+    resp = predict_structure.delay(params['sequence'], params)
     return success({'task_id': resp.id})
 
 
 @app.route('/predict/<sequence>', methods=['GET'])
 def predict_test(sequence):
-    resp = predict_structure.delay(sequence)
+    resp = predict_structure.delay(sequence, {})
     return success({'task_id': resp.id})
 
 

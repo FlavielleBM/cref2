@@ -11,7 +11,7 @@ app = Celery(
 
 
 @app.task(bind=True)
-def predict_structure(self, sequence, params={}):
+def predict_structure(self, sequence, params):
     output_dir = os.path.join('predictions', self.request.id)
     os.mkdir(output_dir)
 
