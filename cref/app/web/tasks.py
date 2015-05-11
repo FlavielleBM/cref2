@@ -1,7 +1,7 @@
 import os
 from celery import Celery
 
-from cref.app.web import WebApp
+from cref.app import BaseApp
 
 app = Celery(
     'tasks',
@@ -18,9 +18,9 @@ def predict_structure(self, sequence, params={}):
     def reporter(state):
         self.update_state(state=state)
 
-    cref_app = WebApp(params)
+    cref_app = BaseApp(params)
+    cref_app.reporter = reporter
     return cref_app.run(
         sequence,
         output_dir,
-        reporter=reporter,
     )

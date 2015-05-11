@@ -12,7 +12,10 @@ class Database:
     def execute(self, query, args=None):
         try:
             cursor = self.conn.cursor()
-            cursor.execute(query, args)
+            if args:
+                cursor.execute(query, args)
+            else:
+                cursor.execute(query)
             self.conn.commit()
         except sqlite3.OperationalError as e:
             logging.info(e)

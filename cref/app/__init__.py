@@ -7,7 +7,7 @@ import pandas
 
 from cref import sequence
 from cref.sequence.alignment import Blast
-from cref.structure import torsions  # , plot
+from cref.structure.torsions import TorsionsCalculator
 from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
 from cref.structure.secondary import SecondaryStructurePredictor
@@ -22,7 +22,7 @@ default_params = dict(
         identity=0,
         pdbs=[],
     ),
-    max_cluster_fragments=100,
+    max_templates=100,
     blast=dict(
         expect_threshold=1000,
         num_alignments=300,
@@ -32,22 +32,39 @@ default_params = dict(
             gap_costs='ungapped',
         ),
     ),
-    cache_torsions=True,
 )
 
 
 class BaseApp:
 
     def __init__(self, params):
-        self.params = default_params.copy()
-        self.params.update(params)
-
-        self.fragment_size = self.params['fragment_size']
-        self.central = math.floor(self.fragment_size / 2)
+        self.set_params(params)
         self.blast = Blast(db='data/blastdb/pdbseqres')
         self.ss_predictor = SecondaryStructurePredictor('data/ss.db')
+        self.torsions_calculator = TorsionsCalculator('data/torsions.db')
         self.failed_pdbs = []
         self.torsions = {}
+
+    def set_params(self, params):
+        self.params = default_params.copy()
+        self.params.update(params)
+        self.fragment_size = self.params['fragment_size']
+        self.central = math.floor(self.fragment_size / 2)
+        self.number_of_clusters = self.params['number_of_clusters']
+        self.max_templates = self.params['max_templates']
+        self.excluded_pdbs = self.params['exclude']['pdbs']
+
+        self.blast_args = {
+            'evalue': self.params['blast']['expect_threshold'],
+            'word_size': self.params['blast']['word_size'],
+            'matrix': self.params['blast']['scoring']['matrix'],
+        }
+
+        gap_costs = self.params['blast']['scoring']['gap_costs']
+        if gap_costs == 'ungapped':
+            self.blast_args['ungapped'] = True
+        else:
+            self.blast_args['gap_costs'] = gap_costs
 
     def reporter(self, state):
         logger.info(state[0] + state[1:].lower().replace('_', ' '))
@@ -98,12 +115,9 @@ class BaseApp:
         if not os.path.isfile(pdb_file):
             raise IOError('PDB not available for ' + pdb_code)
 
-        if pdb_code not in self.torsions or not self.params['cache_torsions']:
-            angles = torsions.backbone_torsion_angles(
-                pdb_file
-            )
-            if self.params['cache_torsions']:
-                self.torsions[pdb_code] = angles
+        if pdb_code not in self.torsions:
+            angles = self.torsions_calculator.get_angles(pdb_code, pdb_file)
+            self.torsions[pdb_code] = angles
         else:
             angles = self.torsions[pdb_code]
         return angles
@@ -115,7 +129,8 @@ class BaseApp:
             if len(blast_structures) < 100:
                 try:
                     pdb_code = hsp.pdb_code
-                    if pdb_code not in self.failed_pdbs:
+                    if (pdb_code not in self.excluded_pdbs) and (
+                            pdb_code not in self.failed_pdbs):
                         angles = self.get_torsion_angles(pdb_code)
                         structure = self.get_hsp_structure(
                             fragment, ss, hsp, angles)
@@ -145,7 +160,7 @@ class BaseApp:
     def get_angles_for_fragment(self, fragment, ss):
         logger.info('Fragment: ' + fragment)
         self.reporter('RUNNING_BLAST')
-        hsps = self.blast.align(fragment)
+        hsps = self.blast.align(fragment, self.blast_args)
 
         self.reporter('RUNNING_TORSIONS')
         blast_structures = self.get_structures_for_blast(
@@ -162,10 +177,14 @@ class BaseApp:
         # plot.ramachandran(blast_structures, fragment, self.central)
 
         self.reporter('CLUSTERING')
-        if len(blast_structures) > 100:
-            blast_structures = blast_structures[:100]
+        if len(blast_structures) > self.max_templates:
+            blast_structures = blast_structures[:self.max_templates]
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
-        return cluster_torsion_angles(blast_structures, ss[self.central])
+        return cluster_torsion_angles(
+            blast_structures,
+            ss[self.central],
+            self.number_of_clusters
+        )
 
     def display_elapsed_time(self, start_time):
         elapsed_time = time.time() - start_time

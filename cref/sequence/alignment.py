@@ -7,9 +7,7 @@ class Blast:
 
     def __init__(self, db):
         self.db = db
-
-    def _local_blast(self, sequence):
-        args = {
+        self.default_args = {
             'cmd': 'blastp',
             'task': 'blastp',
             'outfmt': 5,
@@ -24,19 +22,24 @@ class Blast:
             'ungapped': True,
             'num_threads': 4
         }
+
+    def _local_blast(self, sequence, args):
+        args = self.default_args.copy()
+        args.update(args)
         blastp = NcbiblastpCommandline(**args)
         output, error = blastp(stdin=sequence)
         return NCBIXML.read(StringIO(output))
 
-    def align(self, sequence):
+    def align(self, sequence, args):
         """
         Performs blast on a sequence
 
         :param sequence: String containing the sequence
+        :param args: Arguments such as scoring matrix and gap costs
         """
         results = []
         if self.db:
-            res = self._local_blast(sequence)
+            res = self._local_blast(sequence, args)
             for alignment in res.alignments:
                 for hsp in alignment.hsps:
                     ident = alignment.hit_def.split()[0]

@@ -101,7 +101,7 @@ class TorsionsCalculator:
     def __init__(self, cache_db='data/torsions.db'):
         self.torsions_db = TorsionAnglesDB(cache_db)
 
-    def get_angles(self, pdb_filepath, pdb_code):
+    def get_angles(self, pdb_code, pdb_filepath):
         angles = self.torsions_db.retrieve(pdb_code)
         if not angles:
             angles = backbone_torsion_angles(pdb_filepath)
