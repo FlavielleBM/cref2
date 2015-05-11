@@ -97,7 +97,7 @@ def predict_fasta(filepath, output_dir, params):
     sequences = read_fasta(filepath)
     for sequence in sequences:
         run_cref(
-            sequence,
+            str(sequence.seq),
             os.path.join(output_dir, sequence.id.split('|')[0]),
             params
         )
