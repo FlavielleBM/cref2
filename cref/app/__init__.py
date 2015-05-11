@@ -4,6 +4,7 @@ import logging
 import math
 
 import pandas
+from Bio import pairwise2
 
 from cref import sequence
 from cref.sequence.alignment import Blast
@@ -45,6 +46,7 @@ class BaseApp:
         self.torsions_calculator = TorsionsCalculator('data/torsions.db')
         self.failed_pdbs = []
         self.torsions = {}
+        self.pdb_identities = {}
 
     def set_blast_params(self, params):
         logger.info('Prediction params: ' + str(params))
@@ -74,7 +76,15 @@ class BaseApp:
         self.central = math.floor(self.fragment_size / 2)
         self.number_of_clusters = self.params['number_of_clusters']
         self.max_templates = self.params['max_templates']
-        self.excluded_pdbs = [x.lower() for x in self.params['exclude']['pdbs']]
+        if 'pdbs' in self.params['exclude']:
+            self.excluded_pdbs = [x.lower()
+                                  for x in self.params['exclude']['pdbs']]
+        else:
+            self.excluded_pdbs = []
+        if 'identity' in self.params['exclude']:
+            self.excluded_identity = self.params['exclude']['identity']
+        else:
+            self.excluded_identity = 0
 
     def set_params(self, params):
         self.set_blast_params(params.pop('blast', {}))
@@ -98,6 +108,7 @@ class BaseApp:
         return ('', None, None)
 
     def get_hsp_structure(self, fragment, ss, hsp, angles):
+        identity = -1
         residue, phi, psi = self.get_central_angles(angles, hsp)
         pdb_dssp_result = self.ss_predictor.pdb_dssp(hsp.pdb_code, hsp.chain)
         if phi and psi and pdb_dssp_result:
@@ -105,23 +116,42 @@ class BaseApp:
             start = hsp.sbjct_start - hsp.query_start
             end = hsp.sbjct_end + self.fragment_size - (
                 hsp.query_end)
-            identity = round(
+            frag_identity = round(
                 100 * (hsp.identities / self.fragment_size))
 
-            if hsp_ss[start:end]:
-                return dict(
-                    pdb=hsp.pdb_code,
-                    chain=hsp.chain,
-                    fragment=fragment,
-                    fragment_ss=ss,
-                    subject=hsp.sbjct,
-                    subject_full=hsp_seq[start:end],
-                    subject_ss=hsp_ss[start:end],
-                    central_ss=hsp_ss[start:end][self.central],
-                    identity=identity,
-                    score=hsp.score,
-                    phi=round(phi, 2),
-                    psi=round(psi, 2),
+            if self.excluded_identity > 0:
+                if (hsp.pdb_code, hsp.chain) not in self.pdb_identities:
+                    alignment = pairwise2.align.globalxx(
+                        self.sequence,
+                        hsp_seq,
+                        one_alignment_only=True
+                    )[0]
+                    identity = (alignment[2] / alignment[4]) * 100
+                    self.pdb_identities[(hsp.pdb_code, hsp.chain)] = identity
+                else:
+                    identity = self.pdb_identities[(hsp.pdb_code, hsp.chain)]
+
+            if identity <= self.excluded_identity:
+                if hsp_ss[start:end]:
+                    return dict(
+                        pdb=hsp.pdb_code,
+                        chain=hsp.chain,
+                        fragment=fragment,
+                        fragment_ss=ss,
+                        subject=hsp.sbjct,
+                        subject_full=hsp_seq[start:end],
+                        subject_ss=hsp_ss[start:end],
+                        central_ss=hsp_ss[start:end][self.central],
+                        identity=frag_identity,
+                        score=hsp.score,
+                        phi=round(phi, 2),
+                        psi=round(psi, 2),
+                    )
+            else:
+                logger.info('Skipping {}, identity {}  >= {}'.format(
+                    hsp.pdb_code.upper() + ':' + hsp.chain.upper(),
+                    round(identity, 2),
+                    self.excluded_identity)
                 )
 
     def get_torsion_angles(self, pdb_code):
@@ -144,9 +174,9 @@ class BaseApp:
                 try:
                     pdb_code = hsp.pdb_code
                     if pdb_code in self.excluded_pdbs:
-                        logger.info('Skipping pdb {}'.format(pdb_code))
-                    else:
-                        if pdb_code not in self.failed_pdbs:
+                        logger.info('Skipping pdb {} (given in params'.format(
+                            pdb_code))
+                    elif pdb_code not in self.failed_pdbs:
                             angles = self.get_torsion_angles(pdb_code)
                             structure = self.get_hsp_structure(
                                 fragment, ss, hsp, angles)
@@ -210,6 +240,7 @@ class BaseApp:
             logger.info('Prediction took {} seconds'.format(elapsed_time))
 
     def run(self, aa_sequence, output_dir):
+        self.sequence = aa_sequence
         self.reporter('STARTED')
         start_time = time.time()
 
