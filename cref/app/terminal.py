@@ -96,8 +96,6 @@ def read_fasta(filepath):
 def predict_fasta(filepath, output_dir, params):
     sequences = read_fasta(filepath)
     for seq in sequences:
-        # Remove unknown aminoacids
-        sequence = str(seq.seq).replace('X', '')
         run_cref(
             sequence,
             os.path.join(output_dir, seq.id.split('|')[0]),
