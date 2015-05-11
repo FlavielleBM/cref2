@@ -15,7 +15,7 @@ from cref.structure.secondary import ss_eight_to_three
 
 logger = logging.getLogger('CReF')
 
-default_params = dict(
+default_cref_params = dict(
     fragment_size=5,
     number_of_clusters=8,
     exclude=dict(
@@ -23,14 +23,15 @@ default_params = dict(
         pdbs=[],
     ),
     max_templates=100,
-    blast=dict(
-        expect_threshold=100000,
-        num_alignments=300,
-        word_size=2,
-        scoring=dict(
-            matrix='PAM30',
-            gap_costs='ungapped',
-        ),
+)
+
+default_blast_params = dict(
+    expect_threshold=100000,
+    number_of_alignments=300,
+    word_size=2,
+    scoring=dict(
+        matrix='PAM30',
+        gap_costs='ungapped',
     ),
 )
 
@@ -45,30 +46,38 @@ class BaseApp:
         self.failed_pdbs = []
         self.torsions = {}
 
-    def set_params(self, params):
-        self.params = default_params.copy()
+    def set_blast_params(self, params):
+        blast_args = default_blast_params.copy()
+        blast_args.update(params)
+
+        self.blast_args = {
+            'evalue': blast_args['expect_threshold'],
+            'word_size': blast_args['word_size'],
+            'matrix': blast_args['scoring']['matrix'],
+            'num_alignments': blast_args['number_of_alignments']
+        }
+
+        gap_costs = blast_args['scoring']['gap_costs']
+        if gap_costs == 'ungapped':
+            self.blast_args['ungapped'] = True
+        else:
+            gap_open, gap_extend = [int(x) for x in gap_costs.split()]
+            self.blast_args['gapopen'] = gap_open
+            self.blast_args['gapextend'] = gap_extend
+
+    def set_cref_params(self, params):
+        self.params = default_cref_params.copy()
         self.params.update(params)
+
         self.fragment_size = self.params['fragment_size']
         self.central = math.floor(self.fragment_size / 2)
         self.number_of_clusters = self.params['number_of_clusters']
         self.max_templates = self.params['max_templates']
         self.excluded_pdbs = self.params['exclude']['pdbs']
 
-        self.blast_args = {
-            'evalue': self.params['blast']['expect_threshold'],
-            'word_size': self.params['blast']['word_size'],
-            'matrix': self.params['blast']['scoring']['matrix'],
-        }
-
-        if 'num_alignments' in self.params['blast']:
-            self.blast_args['num_alignments'] = \
-                self.params['blast']['num_alignments']
-
-        gap_costs = self.params['blast']['scoring']['gap_costs']
-        if gap_costs == 'ungapped':
-            self.blast_args['ungapped'] = True
-        else:
-            self.blast_args['gap_costs'] = gap_costs
+    def set_params(self, params):
+        self.set_blast_params(params.pop('blast', {}))
+        self.set_cref_params(params)
 
     def reporter(self, state):
         logger.info(state[0] + state[1:].lower().replace('_', ' '))

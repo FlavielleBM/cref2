@@ -23,9 +23,9 @@ class Blast:
             'num_threads': 4
         }
 
-    def _local_blast(self, sequence, args):
+    def _local_blast(self, sequence, input_args):
         args = self.default_args.copy()
-        args.update(args)
+        args.update(input_args)
         blastp = NcbiblastpCommandline(**args)
         output, error = blastp(stdin=sequence)
         return NCBIXML.read(StringIO(output))
