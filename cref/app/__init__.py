@@ -47,6 +47,7 @@ class BaseApp:
         self.torsions = {}
 
     def set_blast_params(self, params):
+        logger.info('Prediction params: ' + str(params))
         blast_args = default_blast_params.copy()
         blast_args.update(params)
 
@@ -73,7 +74,7 @@ class BaseApp:
         self.central = math.floor(self.fragment_size / 2)
         self.number_of_clusters = self.params['number_of_clusters']
         self.max_templates = self.params['max_templates']
-        self.excluded_pdbs = self.params['exclude']['pdbs']
+        self.excluded_pdbs = [x.lower() for x in self.params['exclude']['pdbs']]
 
     def set_params(self, params):
         self.set_blast_params(params.pop('blast', {}))
@@ -142,13 +143,15 @@ class BaseApp:
             if len(blast_structures) < self.max_templates:
                 try:
                     pdb_code = hsp.pdb_code
-                    if (pdb_code not in self.excluded_pdbs) and (
-                            pdb_code not in self.failed_pdbs):
-                        angles = self.get_torsion_angles(pdb_code)
-                        structure = self.get_hsp_structure(
-                            fragment, ss, hsp, angles)
-                        if structure:
-                            blast_structures.append(structure)
+                    if pdb_code in self.excluded_pdbs:
+                        logger.info('Skipping pdb {}'.format(pdb_code))
+                    else:
+                        if pdb_code not in self.failed_pdbs:
+                            angles = self.get_torsion_angles(pdb_code)
+                            structure = self.get_hsp_structure(
+                                fragment, ss, hsp, angles)
+                            if structure:
+                                blast_structures.append(structure)
                 except Exception as e:
                     self.failed_pdbs.append(pdb_code)
                     logger.warn(e)
