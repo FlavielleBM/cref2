@@ -48,7 +48,7 @@ def select_cluster(angles, ss, select):
     if ss in angles:
         return angles[ss]
     else:
-        for fallback_ss in closest_ss(ss) + ('C', 'H', 'E'):
+        for fallback_ss in closest_ss(ss) + ('-', 'T', 'S', 'H', 'I', 'E', 'B'):
             if fallback_ss in angles:
                 logger.info(
                     'Could not find angles for {}, using angles for {}'.format(
