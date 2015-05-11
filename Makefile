@@ -16,6 +16,9 @@ pdb:
 torsions:
 	cc -o libs/torsions libs/torsions.c -lm
 
+torsions_db: torsions
+	bash -i -c "source env/bin/activate && python -m cref.utils.cache_torsions data/pdb data/torsions.db"
+
 scratch:
 	mkdir libs
 	cd libs && wget http://download.igb.uci.edu/SCRATCH-1D_1.0.tar.gz
@@ -41,6 +44,7 @@ ss:
 	cd data && gunzip -f ss.txt.gz
 	bash -i -c "source env/bin/activate && python -m cref.utils.import_pdb_ss data/ss.txt data/ss.db"
 	rm -rf data/ss.txt
+
 
 install: packages python_packages peptide torsions blastdb ss
 	mkdir predictions
