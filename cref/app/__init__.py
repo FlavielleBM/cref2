@@ -60,6 +60,10 @@ class BaseApp:
             'matrix': self.params['blast']['scoring']['matrix'],
         }
 
+        if 'num_alignments' in self.params['blast']:
+            self.blast_args['num_alignments'] = \
+                self.params['blast']['num_alignments']
+
         gap_costs = self.params['blast']['scoring']['gap_costs']
         if gap_costs == 'ungapped':
             self.blast_args['ungapped'] = True
