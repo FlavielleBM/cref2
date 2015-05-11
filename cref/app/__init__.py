@@ -24,7 +24,7 @@ default_params = dict(
     ),
     max_templates=100,
     blast=dict(
-        expect_threshold=1000,
+        expect_threshold=100000,
         num_alignments=300,
         word_size=2,
         scoring=dict(
@@ -126,7 +126,7 @@ class BaseApp:
         blast_structures = []
         hsps.sort(key=lambda hsp: (hsp.identities, hsp.score), reverse=True)
         for hsp in hsps:
-            if len(blast_structures) < 100:
+            if len(blast_structures) < self.max_templates:
                 try:
                     pdb_code = hsp.pdb_code
                     if (pdb_code not in self.excluded_pdbs) and (
