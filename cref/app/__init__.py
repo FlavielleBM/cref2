@@ -148,7 +148,7 @@ class BaseApp:
                         psi=round(psi, 2),
                     )
             else:
-                logger.info('Skipping {}, identity {}  >= {}'.format(
+                logger.info('Skipping {}, identity {}  > {}'.format(
                     hsp.pdb_code.upper() + ':' + hsp.chain.upper(),
                     round(identity, 2),
                     self.excluded_identity)
