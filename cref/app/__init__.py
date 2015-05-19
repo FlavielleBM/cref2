@@ -155,12 +155,8 @@ class BaseApp:
                 )
 
     def get_torsion_angles(self, pdb_code):
-        pdb_file = 'data/pdb/{}/pdb{}.ent'.format(pdb_code[1:3], pdb_code)
-        if not os.path.isfile(pdb_file):
-            raise IOError('PDB not available for ' + pdb_code)
-
         if pdb_code not in self.torsions:
-            angles = self.torsions_calculator.get_angles(pdb_code, pdb_file)
+            angles = self.torsions_calculator.get_angles(pdb_code)
             self.torsions[pdb_code] = angles
         else:
             angles = self.torsions[pdb_code]
@@ -182,6 +178,9 @@ class BaseApp:
                                 fragment, ss, hsp, angles)
                             if structure:
                                 blast_structures.append(structure)
+                except KeyError as e:
+                    self.failed_pdbs.append(pdb_code)
+                    logger.debug(e)
                 except Exception as e:
                     self.failed_pdbs.append(pdb_code)
                     logger.warn(e)

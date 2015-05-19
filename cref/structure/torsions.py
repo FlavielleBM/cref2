@@ -3,7 +3,6 @@ import pickle
 import sqlite3
 
 from cref.utils import Database
-from cref.libs import torsions
 
 logger = logging.getLogger('CReF')
 
@@ -58,15 +57,8 @@ class TorsionsCalculator:
     def __init__(self, cache_db='data/torsions.db'):
         self.torsions_db = TorsionAnglesDB(cache_db)
 
-    def get_angles(self, pdb_code, pdb_filepath):
+    def get_angles(self, pdb_code):
         angles = self.torsions_db.retrieve(pdb_code)
         if not angles:
-            angles = torsions.dihedral_angles(pdb_filepath)
-            if angles:
-                self.torsions_db.save(
-                    pdb_code,
-                    angles['residues'],
-                    angles['phi'],
-                    angles['psi']
-                )
+            raise KeyError('Torsion angles for {} not found'.format(pdb_code))
         return angles
