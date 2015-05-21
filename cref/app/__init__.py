@@ -200,7 +200,7 @@ class BaseApp:
                 sequence_file:
             sequence_file.write(''.join([ss_eight_to_three(x) for x in ss]))
         ss_fragments = [x.replace('C', '-') for x in ss_fragments]
-        return ss_fragments
+        return ss, ss_fragments
 
     def get_angles_for_fragment(self, fragment, ss):
         logger.info('Fragment: ' + fragment)
@@ -238,15 +238,41 @@ class BaseApp:
         else:
             logger.info('Prediction took {} seconds'.format(elapsed_time))
 
+    def log_dihedrals(self, angles, aa, ss):
+        logger.info('Dihedral angles')
+        logger.info(
+            'aa_seq\tss_seq\tphi_exp\tphi_prd\tphi_dif\tpsi_exp\tpsi_prd\tpsi_dif')
+
+        experimental_torsions = self.get_torsion_angles(self.params['pdb'])
+        exp_phi = experimental_torsions['phi']
+        exp_psi = experimental_torsions['psi']
+        central = self.central
+        valid_dihedrals = angles[central: len(angles) - central]
+        pred_phi = [None] * central + [float(x[0]) for x in valid_dihedrals]
+        pred_psi = [None] * central + [float(x[1]) for x in valid_dihedrals]
+
+        for i in range(2, len(angles) - central):
+            logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                aa[i],
+                ss[i],
+                round(exp_phi[i], 2),
+                round(pred_phi[i], 2),
+                round(abs(exp_phi[i] - pred_phi[i]), 2),
+                round(exp_psi[i], 2),
+                round(pred_psi[i], 2),
+                round(abs(exp_psi[i] - pred_psi[i]), 2),
+            ))
+
     def run(self, aa_sequence, output_dir):
         self.sequence = aa_sequence
         self.reporter('STARTED')
         start_time = time.time()
 
         # Aminoacids in the beggining have unknown phi and psi
-        dihedral_angles = [(None, None)] * (self.central - 1)
+        dihedral_angles = [(None, None)] * (self.central)
 
-        fragments_ss = self.get_secondary_structure(aa_sequence, output_dir)
+        ss_seq, fragments_ss = self.get_secondary_structure(
+            aa_sequence, output_dir)
         fragments = list(sequence.fragment(aa_sequence, self.fragment_size))
         fragments_len = len(fragments)
         logger.info("Number of fragments: {}".format(fragments_len))
@@ -261,6 +287,9 @@ class BaseApp:
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(None, None)] * (self.central)
+
+        if 'pdb' in self.params:
+            self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq)
 
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')

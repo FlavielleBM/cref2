@@ -96,8 +96,9 @@ def read_fasta(filepath):
 def predict_fasta(filepath, output_dir, params):
     sequences = read_fasta(filepath)
     for sequence in sequences:
+        seq = str(sequence.seq).replace('X', '')
         run_cref(
-            str(sequence.seq),
+            seq,
             os.path.join(output_dir, sequence.id.split('|')[0]),
             params
         )
@@ -142,6 +143,7 @@ def main():
     elif args.pdb:
         handler, fasta_file = tempfile.mkstemp(suffix='.fasta', prefix='tmp')
         download_fasta(args.pdb, fasta_file)
+        params['pdb'] = args.pdb
         predict_fasta(fasta_file, args.output_dir, params)
         os.remove(fasta_file)
     else:
