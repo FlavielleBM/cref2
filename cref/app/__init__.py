@@ -4,6 +4,7 @@ import logging
 import math
 
 import pandas
+import matplotlib.pyplot as plt
 from Bio import pairwise2
 
 from cref import sequence
@@ -13,6 +14,7 @@ from cref.structure import write_pdb
 from cref.structure.clustering import cluster_torsion_angles
 from cref.structure.secondary import SecondaryStructurePredictor
 from cref.structure.secondary import ss_eight_to_three
+from cref.structure import plot
 
 logger = logging.getLogger('CReF')
 
@@ -204,6 +206,7 @@ class BaseApp:
 
     def get_angles_for_fragment(self, fragment, ss):
         logger.info('Fragment: ' + fragment)
+        logger.info('Residue: ' + fragment[self.central])
         self.reporter('RUNNING_BLAST')
         hsps = self.blast.align(fragment, self.blast_args)
 
@@ -218,8 +221,8 @@ class BaseApp:
                 'score', 'phi', 'psi'
             ]
         )
-        # print(blast_structures[:10].to_string(index=False))
-        # plot.ramachandran(blast_structures, fragment, self.central)
+        print(blast_structures[:10].to_string(index=False))
+        plot.ramachandran(blast_structures, fragment, self.central)
 
         self.reporter('CLUSTERING')
         if len(blast_structures) > self.max_templates:
@@ -240,28 +243,37 @@ class BaseApp:
 
     def log_dihedrals(self, angles, aa, ss):
         logger.info('Dihedral angles')
-        logger.info(
-            'aa_seq\tss_seq\tphi_exp\tphi_prd\tphi_dif\tpsi_exp\tpsi_prd\tpsi_dif')
+        logger.info(('aa_seq\tss_seq\tphi_exp\tphi_prd'
+                    '\tphi_dif\tpsi_exp\tpsi_prd\tpsi_dif'))
 
         experimental_torsions = self.get_torsion_angles(self.params['pdb'])
         exp_phi = experimental_torsions['phi']
         exp_psi = experimental_torsions['psi']
-        central = self.central
-        valid_dihedrals = angles[central: len(angles) - central]
-        pred_phi = [None] * central + [float(x[0]) for x in valid_dihedrals]
-        pred_psi = [None] * central + [float(x[1]) for x in valid_dihedrals]
+        # Avoid a big meaningless outlier
+        exp_phi[0] = 180
+        pred_phi = [float(x[0]) for x in angles]
+        pred_psi = [float(x[1]) for x in angles]
+        phi_diff = []
+        psi_diff = []
 
-        for i in range(2, len(angles) - central):
+        for i in range(len(angles)):
+            phi_diff.append(abs(exp_phi[i] - pred_phi[i]))
+            psi_diff.append(abs(exp_psi[i] - pred_psi[i]))
             logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
                 aa[i],
                 ss[i],
                 round(exp_phi[i], 2),
                 round(pred_phi[i], 2),
-                round(abs(exp_phi[i] - pred_phi[i]), 2),
+                round(phi_diff[i], 2),
                 round(exp_psi[i], 2),
                 round(pred_psi[i], 2),
-                round(abs(exp_psi[i] - pred_psi[i]), 2),
+                round(psi_diff[i], 2),
             ))
+        plt.plot(range(len(aa)), phi_diff, label='$\phi$', color='g')
+        plt.plot(range(len(aa)), psi_diff, label='$\psi$')
+        plt.xticks(range(len(aa)), [x for x in aa])
+        plt.legend()
+        plt.show()
 
     def run(self, aa_sequence, output_dir):
         self.sequence = aa_sequence
@@ -269,7 +281,7 @@ class BaseApp:
         start_time = time.time()
 
         # Aminoacids in the beggining have unknown phi and psi
-        dihedral_angles = [(None, None)] * (self.central)
+        dihedral_angles = [(180, 180)] * (self.central)
 
         ss_seq, fragments_ss = self.get_secondary_structure(
             aa_sequence, output_dir)
@@ -286,7 +298,7 @@ class BaseApp:
             logger.info('-' * 30)
 
         # Amino acids in the end have unbound angles
-        dihedral_angles += [(None, None)] * (self.central)
+        dihedral_angles += [(180, 180)] * (self.central)
 
         if 'pdb' in self.params:
             self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq)
