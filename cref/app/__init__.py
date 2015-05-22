@@ -222,11 +222,10 @@ class BaseApp:
             ]
         )
         print(blast_structures[:10].to_string(index=False))
-        plot.ramachandran(blast_structures, fragment, self.central)
-
         self.reporter('CLUSTERING')
         if len(blast_structures) > self.max_templates:
             blast_structures = blast_structures[:self.max_templates]
+        plot.ramachandran(blast_structures, fragment, self.central)
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
             blast_structures,
@@ -242,6 +241,7 @@ class BaseApp:
             logger.info('Prediction took {} seconds'.format(elapsed_time))
 
     def log_dihedrals(self, angles, aa, ss):
+        plt.figure()
         logger.info('Dihedral angles')
         logger.info(('aa_seq\tss_seq\tphi_exp\tphi_prd'
                     '\tphi_dif\tpsi_exp\tpsi_prd\tpsi_dif'))
@@ -273,7 +273,8 @@ class BaseApp:
         plt.plot(range(len(aa)), psi_diff, label='$\psi$')
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.show()
+        plt.savefig('predictions/tmp/dihedrals.png')
+        plt.close()
 
     def run(self, aa_sequence, output_dir):
         self.sequence = aa_sequence

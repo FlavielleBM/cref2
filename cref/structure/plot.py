@@ -71,6 +71,7 @@ def ramachandran(torsion_angles, fragment, central):
     :param torsion_angles: Dictionary with torsion angles phi and psi
     :param fragment: Fragment identifier, used for displaying purposes
     """
+    plt.figure()
     ramachandran_surface()
     plt.title("Ramachandran plot for " + fragment)
     plt.scatter(
@@ -82,4 +83,5 @@ def ramachandran(torsion_angles, fragment, central):
         marker='o',
         alpha=0.5,
     )
-    plt.show()
+    plt.savefig('predictions/tmp/{}_ramachandran.png'.format(fragment))
+    plt.close()
