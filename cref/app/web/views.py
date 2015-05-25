@@ -23,7 +23,8 @@ def predict():
     params = flask.request.get_json(force=True)
     if 'sequence' not in params:
         return failure('You did not provide an input sequence')
-    resp = predict_structure.delay(params['sequence'], params)
+    sequence = [x for x in params['sequence'] if x in "ACDEFGHIKLMNPQRSTVWYX"]
+    resp = predict_structure.delay(''.join(sequence), params)
     return success({'task_id': resp.id})
 
 
