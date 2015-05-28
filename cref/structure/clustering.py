@@ -22,20 +22,20 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
         my_members = model.labels_ == k
         cluster_center = model.cluster_centers_[k]
         plt.plot(
-            phi_scaler.inverse_transform(X[my_members, 0]), 
+            phi_scaler.inverse_transform(X[my_members, 0]),
             psi_scaler.inverse_transform(X[my_members, 1]),
             'w', markerfacecolor=col, marker='*', markersize=5
         )
         if angles[0] == cluster_center[0]:
             plt.plot(
-                phi_scaler.inverse_transform(cluster_center[0]), 
-                psi_scaler.inverse_transform(cluster_center[1]), 
+                phi_scaler.inverse_transform(cluster_center[0]),
+                psi_scaler.inverse_transform(cluster_center[1]),
                 'D', markerfacecolor=col, markeredgecolor='k', markersize=8
             )
         else:
             plt.plot(
-                phi_scaler.inverse_transform(cluster_center[0]), 
-                psi_scaler.inverse_transform(cluster_center[1]), 
+                phi_scaler.inverse_transform(cluster_center[0]),
+                psi_scaler.inverse_transform(cluster_center[1]),
                 'o', markerfacecolor=col, markeredgecolor='k', markersize=8
             )
     plt.title('KMeans for fragment ' + fragment)
@@ -61,10 +61,11 @@ def secondary_structure_angles(model, structures, all_scores, ss_map):
 
 
 def select_cluster(angles, ss, select):
+    fallback_options = ('-', 'T', 'S', 'H', 'I', 'E', 'B')
     if ss in angles:
         return angles[ss]
     else:
-        for fallback_ss in closest_ss(ss) + ('-', 'T', 'S', 'H', 'I', 'E', 'B'):
+        for fallback_ss in closest_ss(ss) + fallback_options:
             if fallback_ss in angles:
                 logger.info(
                     'Could not find angles for {}, using angles for {}'.format(
@@ -99,11 +100,13 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8, select="ss"):
         model, structures, scores, ss_map)
 
     angles = select_cluster(torsion_angles, ss, select)
+    inertia = model.inertia_
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))
-    plot_clusters(model, X, angles, phi_scaler, psi_scaler, blast_structures['fragment'][0])
+    plot_clusters(model, X, angles, phi_scaler, psi_scaler,
+                  blast_structures['fragment'][0])
     angles = (
         phi_scaler.inverse_transform(angles[0]),
         psi_scaler.inverse_transform(angles[1])
     )
-    return angles
+    return angles, inertia

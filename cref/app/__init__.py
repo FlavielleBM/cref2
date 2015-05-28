@@ -276,13 +276,21 @@ class BaseApp:
         plt.savefig('predictions/tmp/dihedrals.png')
         plt.close()
 
+    def log_inertias(self, inertias, aa):
+        plt.figure()
+        plt.plot(range(len(aa)), inertias, label='$\phi$')
+        plt.xticks(range(len(aa)), [x for x in aa])
+        plt.savefig('predictions/tmp/inertias.png')
+        plt.close()
+
     def run(self, aa_sequence, output_dir):
         self.sequence = aa_sequence
         self.reporter('STARTED')
         start_time = time.time()
 
         # Aminoacids in the beggining have unknown phi and psi
-        dihedral_angles = [(180, 180)] * (self.central)
+        dihedral_angles = [(180, 180)] * self.central
+        inertias = [0] * self.central
 
         ss_seq, fragments_ss = self.get_secondary_structure(
             aa_sequence, output_dir)
@@ -294,15 +302,18 @@ class BaseApp:
             logger.info(
                 'Progress: {} of {} fragments'.format(i + 1, fragments_len))
             ss = fragments_ss[i]
-            angles = self.get_angles_for_fragment(fragment, ss)
+            angles, inertia = self.get_angles_for_fragment(fragment, ss)
             dihedral_angles.append(angles)
+            inertias.append(inertia)
             logger.info('-' * 30)
 
         # Amino acids in the end have unbound angles
-        dihedral_angles += [(180, 180)] * (self.central)
+        dihedral_angles += [(180, 180)] * self.central
+        inertias += [0] * self.central
 
         if 'pdb' in self.params:
             self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq)
+            self.log_inertias(inertias, aa_sequence)
 
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')
