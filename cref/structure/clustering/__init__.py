@@ -1,14 +1,14 @@
 import logging
 
-import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 from scipy import sparse
+import numpy as np
 
+from cref.structure.clustering import selectors
 from cref.structure.plot import ramachandran_surface
-from cref.structure.secondary import closest_ss
 
 logger = logging.getLogger('CReF')
 
@@ -43,37 +43,7 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
     plt.close()
 
 
-def secondary_structure_angles(model, structures, all_scores, ss_map):
-    angles = {}
-    scores = {}
-    for k in range(model.n_clusters):
-        # tie breaker on the top 5 score
-        my_members = model.labels_ == k
-        my_scores = all_scores[my_members].tolist()
-        score = sum(sorted(my_scores, reverse=True)[:5])
-
-        ss = chr(ss_map[np.argmax(model.cluster_centers_[k][2:])])
-
-        if (ss not in angles) or (scores[ss] < score):
-            angles[ss] = model.cluster_centers_[k]
-            scores[ss] = score
-    return angles
-
-
-def select_cluster(angles, ss, select):
-    fallback_options = ('-', 'T', 'S', 'H', 'I', 'E', 'B')
-    if ss in angles:
-        return angles[ss]
-    else:
-        for fallback_ss in closest_ss(ss) + fallback_options:
-            if fallback_ss in angles:
-                logger.info(
-                    'Could not find angles for {}, using angles for {}'.format(
-                        ss, fallback_ss))
-                return angles[fallback_ss]
-
-
-def cluster_torsion_angles(blast_structures, ss, n_clusters=8, select="ss"):
+def cluster_torsion_angles(blast_structures, ss, n_clusters=8, selector="ss"):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
     structures = blast_structures['central_ss']
@@ -96,10 +66,11 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8, select="ss"):
 
     model = KMeans(init='k-means++', n_clusters=n_clusters)
     model.fit(X)
-    torsion_angles = secondary_structure_angles(
-        model, structures, scores, ss_map)
-
-    angles = select_cluster(torsion_angles, ss, select)
+    if selector == "score":
+        angles = selectors.top_scoring(model, scores)
+    else:
+        angles = selectors.secondary_structure(
+            model, scores, structures, ss, ss_map)
     inertia = model.inertia_
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))

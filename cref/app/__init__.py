@@ -25,12 +25,12 @@ default_cref_params = dict(
         identity=0,
         pdbs=[],
     ),
-    max_templates=100,
+    max_templates=50,
 )
 
 default_blast_params = dict(
     expect_threshold=100000,
-    number_of_alignments=300,
+    number_of_alignments=500,
     word_size=2,
     scoring=dict(
         matrix='PAM30',
@@ -230,7 +230,8 @@ class BaseApp:
         return cluster_torsion_angles(
             blast_structures,
             ss[self.central],
-            self.number_of_clusters
+            self.number_of_clusters,
+            selector="score"
         )
 
     def display_elapsed_time(self, start_time):
@@ -303,6 +304,7 @@ class BaseApp:
                 'Progress: {} of {} fragments'.format(i + 1, fragments_len))
             ss = fragments_ss[i]
             angles, inertia = self.get_angles_for_fragment(fragment, ss)
+            logger.info('Dihedrals: {}'.format(angles))
             dihedral_angles.append(angles)
             inertias.append(inertia)
             logger.info('-' * 30)

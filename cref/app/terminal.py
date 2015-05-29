@@ -5,6 +5,7 @@ import argparse
 import logging
 import importlib
 import tempfile
+import subprocess
 
 import pandas
 import requests
@@ -74,7 +75,7 @@ def parse_args():
         help='File specifying the configurations'
     )
     parser.add_argument(
-        '--output_dir', dest='output_dir',
+        '--output', dest='output_dir',
         default='predictions/tmp',
         help='Directory to save the results'
     )
@@ -82,6 +83,10 @@ def parse_args():
         '--log', dest='log_level',
         default='INFO',
         help='Log level to be used (DEBUG, INFO, WARN, ERROR)'
+    )
+    parser.add_argument(
+        '--pymol', dest='pymol', action='store_true',
+        help='View prediction in PyMOL'
     )
     return parser.parse_args()
 
@@ -95,19 +100,19 @@ def read_fasta(filepath):
 
 def predict_fasta(filepath, output_dir, params):
     sequences = read_fasta(filepath)
+    output_filepaths = []
     for sequence in sequences:
         seq = str(sequence.seq).replace('X', '')
-        run_cref(
+        output = run_cref(
             seq,
             os.path.join(output_dir, sequence.id.split('|')[0]),
             params
         )
+        output_filepaths.append(output)
+    return output_filepaths
 
 
-def download_fasta(pdb_code, filepath):
-    """"""
-    url = ('http://www.rcsb.org/pdb'
-           '/files/fasta.txt?structureIdList=' + pdb_code.upper())
+def _download_file(url, filepath):
     r = requests.get(url, stream=True)
     with open(filepath, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
@@ -117,6 +122,19 @@ def download_fasta(pdb_code, filepath):
     return filepath
 
 
+def download_fasta(pdb_code, filepath):
+    """"""
+    url = ('http://www.rcsb.org/pdb'
+           '/files/fasta.txt?structureIdList=' + pdb_code.upper())
+    return _download_file(url, filepath)
+
+
+def download_pdb(pdb_code, filepath):
+    url = ('http://www.rcsb.org/pdb/download/downloadFile.do?'
+           'fileFormat=pdb&compression=NO&structureId=' + pdb_code.upper())
+    return _download_file(url, filepath)
+
+
 def read_config(module):
     try:
         config = importlib.import_module(module)
@@ -124,6 +142,21 @@ def read_config(module):
         logger.error(e)
         raise Exception('Invalid config file')
     return config
+
+
+def run_pymol(pdb_code, predicted_filepath):
+    filepath = os.path.join(
+        os.path.dirname(predicted_filepath),
+        'experimental_structure.pdb'
+    )
+    experimental_pdb = download_pdb(pdb_code, filepath)
+    subprocess.call([
+        'pymol',
+        predicted_filepath,
+        experimental_pdb,
+        '-r',
+        'cref/utils/pymol.py'
+    ])
 
 
 def main():
@@ -144,8 +177,10 @@ def main():
         handler, fasta_file = tempfile.mkstemp(suffix='.fasta', prefix='tmp')
         download_fasta(args.pdb, fasta_file)
         params['pdb'] = args.pdb
-        predict_fasta(fasta_file, args.output_dir, params)
+        output_files = predict_fasta(fasta_file, args.output_dir, params)
         os.remove(fasta_file)
+        if args.pymol:
+            run_pymol(args.pdb, output_files[0])
     else:
         raise ValueError('You must specify a sequence, fasta file or pdb code')
 
