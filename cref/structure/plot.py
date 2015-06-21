@@ -79,7 +79,6 @@ def ramachandran(torsion_angles, fragment, central):
         y=torsion_angles['psi'],
         s=[1.05 ** x for x in torsion_angles['identity']],
         c=[DSSP_to_color[ss] for ss in torsion_angles['central_ss']],
-        cmap="seismic",
         marker='o',
         alpha=0.5,
     )
