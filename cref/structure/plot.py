@@ -64,7 +64,7 @@ def ramachandran_surface():
     ax.yaxis.set_ticks_position('left')
 
 
-def ramachandran(torsion_angles, fragment, central):
+def ramachandran(torsion_angles, fragment, target_pdb=None):
     """
     Plot ramachandran of a set of torsion angles for a given fragment
 
@@ -73,7 +73,7 @@ def ramachandran(torsion_angles, fragment, central):
     """
     plt.figure()
     ramachandran_surface()
-    plt.title("Ramachandran plot for " + fragment)
+    plt.title('Ramachandran plot for ' + fragment)
     plt.scatter(
         x=torsion_angles['phi'],
         y=torsion_angles['psi'],
@@ -82,5 +82,17 @@ def ramachandran(torsion_angles, fragment, central):
         marker='o',
         alpha=0.5,
     )
-    plt.savefig('predictions/tmp/{}_ramachandran.png'.format(fragment))
+    if target_pdb and (target_pdb in list(torsion_angles['pdb'])):
+        i = list(torsion_angles['pdb']).index(target_pdb)
+        plt.scatter(
+            x=torsion_angles['phi'][i],
+            y=torsion_angles['psi'][i],
+            marker='D',
+            c='red',
+            s=50
+        )
+    plt.savefig(
+        'predictions/tmp/{}_ramachandran.png'.format(fragment),
+        dpi=200
+    )
     plt.close()
