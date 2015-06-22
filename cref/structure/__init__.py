@@ -19,8 +19,9 @@ def write_pdb(aa_sequence, fragment_angles, gap_length, filepath):
 
 
 def rmsd(source, target):
-    source = Bio.PDB.parser.get_structure('source', source)
-    target = Bio.PDB.parser.get_structure('target', target)
+    parser = Bio.PDB.PDBParser()
+    source = parser.get_structure('source', source)
+    target = parser.get_structure('target', target)
 
     superimposer = Bio.PDB.Superimposer()
     source_atoms = list(source.get_atoms())
