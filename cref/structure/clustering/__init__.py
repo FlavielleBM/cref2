@@ -3,9 +3,13 @@ import logging
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
 from sklearn import preprocessing
+
 import matplotlib.pyplot as plt
+from pylab import cm
+
 from scipy import sparse
 import numpy as np
+
 
 from cref.structure.clustering import selectors
 from cref.structure.plot import ramachandran_surface
@@ -14,17 +18,21 @@ logger = logging.getLogger('CReF')
 
 
 def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
-    plt.figure()
     ramachandran_surface()
-    colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan']
     X = SX.todense()
-    for k, col in zip(range(model.n_clusters), colors):
+    # Start from 10 to avoid blacks
+    colors = np.linspace(10, 255, model.n_clusters)
+    for k, color in zip(range(model.n_clusters), colors):
+        col = cm.spectral(int(color))
         my_members = model.labels_ == k
         cluster_center = model.cluster_centers_[k]
-        plt.plot(
-            phi_scaler.inverse_transform(X[my_members, 0]),
-            psi_scaler.inverse_transform(X[my_members, 1]),
-            'w', markerfacecolor=col, marker='*', markersize=5
+        plt.scatter(
+            x=phi_scaler.inverse_transform(X[my_members, 0]),
+            y=psi_scaler.inverse_transform(X[my_members, 1]),
+            c=col,
+            s=30,
+            marker='o',
+            alpha=0.5
         )
         if angles[0] == cluster_center[0]:
             plt.plot(
@@ -36,14 +44,16 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
             plt.plot(
                 phi_scaler.inverse_transform(cluster_center[0]),
                 psi_scaler.inverse_transform(cluster_center[1]),
-                'o', markerfacecolor=col, markeredgecolor='k', markersize=8
+                '*', markerfacecolor=col, markeredgecolor='k', markersize=10
             )
-    plt.title('KMeans for fragment ' + fragment)
-    plt.savefig('predictions/tmp/{}_clustering.png'.format(fragment))
+        plt.title('KMeans for fragment {} (inertia: {:.2})'.format(
+            fragment, model.inertia_))
+    plt.savefig('predictions/tmp/{}_wclustering.png'.format(fragment), dpi=200)
     plt.close()
 
 
-def cluster_torsion_angles(blast_structures, ss, n_clusters=8, selector="ss"):
+def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
+                           selector="ss", name="cluster_plot"):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
     structures = blast_structures['central_ss']
@@ -74,8 +84,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8, selector="ss"):
     inertia = model.inertia_
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))
-    plot_clusters(model, X, angles, phi_scaler, psi_scaler,
-                  blast_structures['fragment'][0])
+    plot_clusters(model, X, angles, phi_scaler, psi_scaler, name)
     angles = (
         phi_scaler.inverse_transform(angles[0]),
         psi_scaler.inverse_transform(angles[1])
