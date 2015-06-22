@@ -6,7 +6,7 @@ from cref.app.terminal import download_pdb, download_fasta, predict_fasta
 
 
 pdbs = ['1zdd', '1gab']
-runs = 100
+runs = 5
 fragment_sizes = range(5, 13, 2)
 number_of_clusters = range(4, 20, 1)
 
@@ -30,7 +30,9 @@ for pdb in pdbs:
                 }
 
 
-                output_files = predict_fasta(fasta_file, output_dir, params)
+                prediction_output = output_dir + str(run)
+                os.mkdir(prediction_output)
+                output_files = predict_fasta(fasta_file, prediction_output, params)
                 predicted_structure = output_files[0]
                 filepath = os.path.join(
                     os.path.dirname(predicted_structure),
