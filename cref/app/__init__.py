@@ -226,13 +226,16 @@ class BaseApp:
         self.reporter('CLUSTERING')
         if len(blast_structures) > self.max_templates:
             blast_structures = blast_structures[:self.max_templates]
-        plot.ramachandran(blast_structures, fragment, self.central)
+        target = self.params.get('pdb', None)
+        plot.ramachandran(
+            blast_structures, "{} {}".format(index, fragment), target)
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
             blast_structures,
             ss[self.central],
             self.number_of_clusters,
-            selector="score"
+            selector='ss',
+            name="{} {}".format(index, fragment),
         )
 
     def display_elapsed_time(self, start_time):
@@ -253,14 +256,15 @@ class BaseApp:
         exp_psi = experimental_torsions['psi']
         # Avoid a big meaningless outlier
         exp_phi[0] = 180
+        exp_psi[-1] = 180
         pred_phi = [float(x[0]) for x in angles]
         pred_psi = [float(x[1]) for x in angles]
         phi_diff = []
         psi_diff = []
 
         for i in range(len(angles)):
-            phi_diff.append(abs(exp_phi[i] - pred_phi[i]))
-            psi_diff.append(abs(exp_psi[i] - pred_psi[i]))
+            phi_diff.append(180 - abs(180 - abs(exp_phi[i] - pred_phi[i])))
+            psi_diff.append(180 - abs(180 - abs(exp_psi[i] - pred_psi[i])))
             logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
                 aa[i],
                 ss[i],
@@ -275,14 +279,14 @@ class BaseApp:
         plt.plot(range(len(aa)), psi_diff, label='$\psi$')
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.savefig('predictions/tmp/dihedrals.png')
+        plt.savefig('predictions/tmp/dihedrals.png', dpi=200)
         plt.close()
 
     def log_inertias(self, inertias, aa):
         plt.figure()
         plt.plot(range(len(aa)), inertias, label='$\phi$')
         plt.xticks(range(len(aa)), [x for x in aa])
-        plt.savefig('predictions/tmp/inertias.png')
+        plt.savefig('predictions/tmp/inertias.png', dpi=200)
         plt.close()
 
     def run(self, aa_sequence, output_dir):
