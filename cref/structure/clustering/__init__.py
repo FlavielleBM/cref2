@@ -17,7 +17,8 @@ from cref.structure.plot import ramachandran_surface
 logger = logging.getLogger('CReF')
 
 
-def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
+def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
+                  output_writer=None):
     ramachandran_surface()
     X = SX.todense()
     # Start from 10 to avoid blacks
@@ -46,14 +47,16 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment):
                 psi_scaler.inverse_transform(cluster_center[1]),
                 '*', markerfacecolor=col, markeredgecolor='k', markersize=10
             )
-        plt.title('KMeans for fragment {} (inertia: {:.2})'.format(
+        plt.title('Clusters for {} (inertia: {:.2})'.format(
             fragment, model.inertia_))
-    plt.savefig('predictions/tmp/{}_wclustering.png'.format(fragment), dpi=200)
+    if output_writer:
+        output_writer.savefig(dpi=200)
     plt.close()
 
 
 def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
-                           selector="ss", name="cluster_plot"):
+                           selector="ss", name="cluster_plot",
+                           output_writer=None):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
     structures = blast_structures['central_ss']
@@ -84,7 +87,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     inertia = model.inertia_
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))
-    plot_clusters(model, X, angles, phi_scaler, psi_scaler, name)
+    plot_clusters(model, X, angles, phi_scaler, psi_scaler, name, output_writer)
     angles = (
         phi_scaler.inverse_transform(angles[0]),
         psi_scaler.inverse_transform(angles[1])

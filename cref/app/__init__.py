@@ -5,6 +5,8 @@ import math
 
 import pandas
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 from Bio import pairwise2
 
 from cref import sequence
@@ -205,7 +207,7 @@ class BaseApp:
         ss_fragments = [x.replace('C', '-') for x in ss_fragments]
         return ss, ss_fragments
 
-    def get_angles_for_fragment(self, fragment, ss, index):
+    def get_angles_for_fragment(self, fragment, ss, index, output_dir):
         logger.info('Fragment: ' + fragment)
         logger.info('Residue: ' + fragment[self.central])
         self.reporter('RUNNING_BLAST')
@@ -222,20 +224,30 @@ class BaseApp:
                 'score', 'phi', 'psi'
             ]
         )
-        print(blast_structures[:10].to_string(index=False))
         self.reporter('CLUSTERING')
         if len(blast_structures) > self.max_templates:
             blast_structures = blast_structures[:self.max_templates]
+
+        blast_structures.to_excel(
+            self.excel_writer,
+            sheet_name=fragment,
+            index=False
+        )
         target = self.params.get('pdb', None)
         plot.ramachandran(
-            blast_structures, "{} {}".format(index, fragment), target)
+            blast_structures,
+            "{} ({})".format(fragment[self.central], fragment),
+            target,
+            output_writer=self.pdf_writer
+        )
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
             blast_structures,
             ss[self.central],
             self.number_of_clusters,
             selector='ss',
-            name="{} {}".format(index, fragment),
+            name="{} ({})".format(fragment[self.central], fragment),
+            output_writer=self.pdf_writer,
         )
 
     def display_elapsed_time(self, start_time):
@@ -245,7 +257,7 @@ class BaseApp:
         else:
             logger.info('Prediction took {} seconds'.format(elapsed_time))
 
-    def log_dihedrals(self, angles, aa, ss):
+    def log_dihedrals(self, angles, aa, ss, output_dir):
         plt.figure()
         logger.info('Dihedral angles')
         logger.info(('aa_seq\tss_seq\tphi_exp\tphi_prd'
@@ -279,18 +291,28 @@ class BaseApp:
         plt.plot(range(len(aa)), psi_diff, label='$\psi$')
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.savefig('predictions/tmp/dihedrals.png', dpi=200)
+        plt.savefig(os.path.join(output_dir, 'dihedrals.png'), dpi=200)
         plt.close()
 
-    def log_inertias(self, inertias, aa):
+    def log_inertias(self, inertias, aa, output_dir):
         plt.figure()
         plt.plot(range(len(aa)), inertias, label='$\phi$')
         plt.xticks(range(len(aa)), [x for x in aa])
-        plt.savefig('predictions/tmp/inertias.png', dpi=200)
+        plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=200)
         plt.close()
 
     def run(self, aa_sequence, output_dir):
         self.sequence = aa_sequence
+        report_dir = os.path.join(output_dir, 'report')
+
+        if not os.path.exists(report_dir):
+            os.makedirs(report_dir)
+
+        self.excel_writer = pandas.ExcelWriter(
+            os.path.join(report_dir, 'templates.xlsx'))
+        self.pdf_writer = PdfPages(
+            os.path.join(report_dir, 'ramachandram_plots.pdf'))
+
         self.reporter('STARTED')
         start_time = time.time()
 
@@ -308,8 +330,8 @@ class BaseApp:
             logger.info(
                 'Progress: {} of {} fragments'.format(i + 1, fragments_len))
             ss = fragments_ss[i]
-            angles, inertia = self.get_angles_for_fragment(fragment, ss, i)
-            logger.info('Dihedrals: {}'.format(angles))
+            angles, inertia = self.get_angles_for_fragment(
+                fragment, ss, i, report_dir)
             dihedral_angles.append(angles)
             inertias.append(inertia)
             logger.info('-' * 30)
@@ -319,11 +341,13 @@ class BaseApp:
         inertias += [0] * self.central
 
         if 'pdb' in self.params:
-            self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq)
-            self.log_inertias(inertias, aa_sequence)
+            self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq, report_dir)
+            self.log_inertias(inertias, aa_sequence, report_dir)
 
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
         self.display_elapsed_time(start_time)
+        self.excel_writer.close()
+        self.pdf_writer.close()
         return os.path.abspath(output_file)

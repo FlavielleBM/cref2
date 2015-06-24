@@ -21,6 +21,9 @@ class TerminalApp(BaseApp):
     App to be run on the terminal
     """
 
+    def reporter(self, state):
+        pass
+
 
 def run_cref(aa_sequence, output_dir, params):
     pandas.set_option('display.max_columns', 0)
@@ -103,11 +106,11 @@ def predict_fasta(filepath, output_dir, params):
     output_filepaths = []
     for sequence in sequences:
         seq = str(sequence.seq).replace('X', '')
-        output = run_cref(
-            seq,
-            os.path.join(output_dir, sequence.id.split('|')[0]),
-            params
-        )
+        output_dir = os.path.join(output_dir, sequence.id.split(':')[0] + '/')
+        output = run_cref(seq, output_dir, params)
+        sequence_file = os.path.join(output_dir, 'sequence.txt')
+        with open(sequence_file, 'w') as sequence_output:
+            sequence_output.write(seq)
         output_filepaths.append(output)
     return output_filepaths
 
