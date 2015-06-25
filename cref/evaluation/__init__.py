@@ -26,6 +26,7 @@ for pdb in pdbs:
     output_dir = os.path.join('predictions/evaluation/', pdb)
     os.makedirs(output_dir, exist_ok=True)
     fasta_file = os.path.join(output_dir, pdb + '.fasta')
+    print('Downloading fasta for', pdb)
     download_fasta(pdb, fasta_file)
     sequence = read_fasta(fasta_file)[0]
     seq = str(sequence.seq).replace('X', '')
@@ -48,12 +49,14 @@ for pdb in pdbs:
                     prediction_output = os.path.join(
                         experiment_output, str(run))
                     os.makedirs(prediction_output, exist_ok=True)
+                    print('Running CReF')
                     predicted_structure = run_cref(
                         seq, prediction_output, params)
                     filepath = os.path.join(
                         os.path.dirname(predicted_structure),
                         'experimental_structure.pdb'
                     )
+                    print('Calculating prediction RMSD')
                     experimental_structure = download_pdb(pdb, filepath)
                     rmsds.append(
                         rmsd(predicted_structure, experimental_structure))
@@ -70,6 +73,4 @@ for pdb in pdbs:
                     max_run=numpy.argmax(rmsds)
                 ))
     results_df = pandas.DataFrame(results)
-    results_df.to_excel(writer, pdb)
-
-writer.close()
+    results_df.to_excel(os.path.join(output_dir, pdb + '.xlsx'), index=False)
