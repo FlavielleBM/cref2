@@ -50,7 +50,7 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
         plt.title('Clusters for {} (inertia: {:.2})'.format(
             fragment, model.inertia_))
     if output_writer:
-        output_writer.savefig(dpi=200)
+        output_writer.savefig(dpi=150)
     plt.close()
 
 
@@ -87,7 +87,8 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     inertia = model.inertia_
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))
-    plot_clusters(model, X, angles, phi_scaler, psi_scaler, name, output_writer)
+    plot_clusters(
+        model, X, angles, phi_scaler, psi_scaler, name, output_writer)
     angles = (
         phi_scaler.inverse_transform(angles[0]),
         psi_scaler.inverse_transform(angles[1])

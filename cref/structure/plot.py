@@ -64,7 +64,8 @@ def ramachandran_surface():
     ax.yaxis.set_ticks_position('left')
 
 
-def ramachandran(torsion_angles, fragment, target_pdb=None, output_writer=None):
+def ramachandran(torsion_angles, fragment, target_pdb=None,
+                 output_writer=None):
     """
     Plot ramachandran of a set of torsion angles for a given fragment
 
@@ -92,5 +93,5 @@ def ramachandran(torsion_angles, fragment, target_pdb=None, output_writer=None):
             s=50
         )
     if output_writer:
-        output_writer.savefig(dpi=200)
+        output_writer.savefig(dpi=150)
     plt.close()

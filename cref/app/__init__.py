@@ -291,14 +291,14 @@ class BaseApp:
         plt.plot(range(len(aa)), psi_diff, label='$\psi$')
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.savefig(os.path.join(output_dir, 'dihedrals.png'), dpi=200)
+        plt.savefig(os.path.join(output_dir, 'dihedrals.png'), dpi=150)
         plt.close()
 
     def log_inertias(self, inertias, aa, output_dir):
         plt.figure()
         plt.plot(range(len(aa)), inertias, label='$\phi$')
         plt.xticks(range(len(aa)), [x for x in aa])
-        plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=200)
+        plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=150)
         plt.close()
 
     def run(self, aa_sequence, output_dir):
@@ -310,8 +310,6 @@ class BaseApp:
 
         self.excel_writer = pandas.ExcelWriter(
             os.path.join(report_dir, 'templates.xlsx'))
-        self.pdf_writer = PdfPages(
-            os.path.join(report_dir, 'ramachandram_plots.pdf'))
 
         self.reporter('STARTED')
         start_time = time.time()
@@ -326,22 +324,26 @@ class BaseApp:
         fragments_len = len(fragments)
         logger.info("Number of fragments: {}".format(fragments_len))
         logger.info('-' * 30)
-        for i, fragment in enumerate(fragments):
-            logger.info(
-                'Progress: {} of {} fragments'.format(i + 1, fragments_len))
-            ss = fragments_ss[i]
-            angles, inertia = self.get_angles_for_fragment(
-                fragment, ss, i, report_dir)
-            dihedral_angles.append(angles)
-            inertias.append(inertia)
-            logger.info('-' * 30)
+        pdf_report = os.path.join(report_dir, 'ramachandram_plots.pdf')
+        with PdfPages(pdf_report) as self.pdf_writer:
+            for i, fragment in enumerate(fragments):
+                logger.info('Progress: {} of {} fragments'.format(
+                    i + 1, fragments_len))
+                ss = fragments_ss[i]
+
+                angles, inertia = self.get_angles_for_fragment(
+                    fragment, ss, i, report_dir)
+                dihedral_angles.append(angles)
+                inertias.append(inertia)
+                logger.info('-' * 30)
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(180, 180)] * self.central
         inertias += [0] * self.central
 
         if 'pdb' in self.params:
-            self.log_dihedrals(dihedral_angles, aa_sequence, ss_seq, report_dir)
+            self.log_dihedrals(
+                dihedral_angles, aa_sequence, ss_seq, report_dir)
             self.log_inertias(inertias, aa_sequence, report_dir)
 
         self.reporter('WRITING_PDB')
@@ -349,5 +351,4 @@ class BaseApp:
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
         self.display_elapsed_time(start_time)
         self.excel_writer.close()
-        self.pdf_writer.close()
         return os.path.abspath(output_file)
