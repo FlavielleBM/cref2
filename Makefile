@@ -62,4 +62,4 @@ databases: blastdb ss pdb torsions_db
 
 
 install: packages python_packages peptide torsions
-	mkdir predictions
+	mkdir -p predictions
