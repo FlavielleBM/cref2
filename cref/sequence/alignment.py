@@ -30,7 +30,7 @@ class Blast:
         output, error = blastp(stdin=sequence)
         return NCBIXML.read(StringIO(output))
 
-    def align(self, sequence, args):
+    def align(self, sequence, args=None):
         """
         Performs blast on a sequence
 
@@ -38,6 +38,8 @@ class Blast:
         :param args: Arguments such as scoring matrix and gap costs
         """
         results = []
+        if args is None:
+            args = {}
         if self.db:
             res = self._local_blast(sequence, args)
             for alignment in res.alignments:
