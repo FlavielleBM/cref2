@@ -10,7 +10,7 @@ class AlignmentTestCase(unittest.TestCase):
         blast = Blast('data/blastdb/pdbseqres')
         results = blast.align('AASSF')
         pdbs = {result.pdb_code for result in results}
-        self.assertIn('1o61', pdbs)
+        self.assertIn('4eef', pdbs)
 
     def test_blast_local_error(self):
         blast = Blast('db')
