@@ -63,3 +63,9 @@ databases: blastdb ss pdb torsions_db
 
 install: packages python_packages peptide torsions
 	mkdir -p predictions
+
+coverage:
+	bash -i -c "source env/bin/activate && coverage run --source=cref -m unittest discover"
+	coverage html
+	coverage report
+	
