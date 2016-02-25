@@ -17,14 +17,3 @@ class AlignmentTestCase(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             blast.align('AASSF')
         self.assertIn('Database error', cm.exception.args[-1])
-
-    def test_blast_web(self):
-        blast = Blast()
-        with mock.patch('cref.sequence.alignment.NCBIWWW.qblast') as qblast:
-            with open('tests/samples/web_blast.xml') as qblast_results:
-                qblast.return_value = StringIO(qblast_results.read())
-            results = blast.align('AASSF')
-            self.assertIn('1o61', str(results))
-            self.assertEqual(len(results), 493)
-            pdbs = {result.pdb_code for result in results}
-            self.assertIn('1o61', pdbs)
