@@ -16,7 +16,8 @@ class TorsionAnglesDB(Database):
         parent.execute(
             """
             CREATE TABLE IF NOT EXISTS pdb_torsions (
-                pdb text, residues text, phi blob, psi blob
+                pdb text, residues text, indices blob,
+                phi blob, psi blob, omega blob
             )
             """
         )
@@ -26,27 +27,32 @@ class TorsionAnglesDB(Database):
             """
         )
 
-    def save(self, pdb_code, residues, phi, psi):
-        query = "INSERT INTO pdb_torsions VALUES (?, ?, ?, ?)"
+    def save(self, pdb_code, residues, indices, phi, psi, omega):
+        query = "INSERT INTO pdb_torsions VALUES (?, ?, ?, ?, ?, ?)"
         args = (
             pdb_code.upper(),
             residues,
+            sqlite3.Binary(pickle.dumps(indices)),
             sqlite3.Binary(pickle.dumps(phi)),
-            sqlite3.Binary(pickle.dumps(psi))
+            sqlite3.Binary(pickle.dumps(psi)),
+            sqlite3.Binary(pickle.dumps(omega)),
         )
         super(TorsionAnglesDB, self).execute(query, args)
 
     def retrieve(self, pdb_code):
         result = super(TorsionAnglesDB, self).retrieve(
             """
-            SELECT residues, phi, psi FROM pdb_torsions WHERE pdb = '{}'
+            SELECT residues, indices, phi,
+                psi, omega FROM pdb_torsions WHERE pdb = '{}'
             """.format(pdb_code.upper())
         )
         if result and len(result) == 3:
             return dict(
                 residues=result[0],
-                phi=pickle.loads(result[1]),
-                psi=pickle.loads(result[2]),
+                indices=pickle.loads(result[1]),
+                phi=pickle.loads(result[2]),
+                psi=pickle.loads(result[3]),
+                omega=pickle.loads(result[4]),
             )
         else:
             return None
