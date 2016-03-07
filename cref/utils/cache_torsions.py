@@ -2,6 +2,7 @@
 
 import glob
 from cref.libs import torsions
+from cref.structure import sidechain
 from cref.structure.torsions import TorsionAnglesDB
 
 
@@ -14,6 +15,7 @@ def save_torsions_to_db(db_name='data/torsions.db'):
         print(i, pdb_filepath[15:19].upper())
         try:
             angles = torsions.dihedral_angles(pdb_filepath)
+            chis = sidechain.chi_angles(pdb_filepath)
             db.save(
                 pdb_filepath[15:19],
                 angles['residues'],
@@ -21,6 +23,7 @@ def save_torsions_to_db(db_name='data/torsions.db'):
                 angles['phi'],
                 angles['psi'],
                 angles['omega'],
+                *chis
             )
         except Exception as e:
             print(e)

@@ -4,7 +4,11 @@ import sys
 
 from Bio import PDB
 
+
+"""Number of chis being calculated."""
 CHI_COUNT = 5
+
+"""Atoms that make up the chi angles for every aminoacid."""
 CHI_ATOMS = [
     dict(
         ARG=['N', 'CA', 'CB', 'CG'],
@@ -58,7 +62,22 @@ CHI_ATOMS = [
     ),
 ]
 
-def get_sidechain_torsions(filename, model_id):
+
+def chi_angles(filepath, model_id=0):
+    """Calculate chi angles for a given file in the PDB format.
+
+    :param filepath: Path to the PDB file.
+    :param model_id: Model to be used for chi calculation.
+
+    :return: A list composed by a list of chi1, a list of chi2, etc.
+    """
+    torsions_list = _sidechain_torsions(filename, model_id)
+    chis = [item[2] for item in torsions_list]
+    return list(zip(*chis))
+
+
+def _sidechain_torsions(filename, model_id):
+
     parser = PDB.PDBParser()
     structure_id = os.path.splitext(os.path.basename(filename))[0][-4:]
     structure = parser.get_structure(structure_id, filename)
@@ -72,26 +91,29 @@ def get_sidechain_torsions(filename, model_id):
             if res.id[0] != " ":
                 continue
             res_name = res.resname
-            chi_list = [None] * CHI_COUNT
+            chis = [float('nan')] * CHI_COUNT
             for i, chi_res in enumerate(CHI_ATOMS):
                 if res_name in chi_res:
                     atom_list = chi_res[res_name]
                     vec_atoms = [res[a] for a in atom_list]
                     vectors = [a.get_vector() for a in vec_atoms]
                     angle = PDB.calc_dihedral(*vectors)
-                    chi_list[i] = round(math.degrees(angle), 3)
+                    chis[i] = round(math.degrees(angle), 3)
 
             resi = "{0}{1}".format(res.id[1], res.id[2].strip())
-            torsion_list.append([resi, res_name, chi_list])
+            torsion_list.append([resi, res_name, chis])
     return torsion_list
+
 
 if __name__ == "__main__":
     filename = sys.argv[1]
     model = sys.argv[2] if len(sys.argv) > 2 else 0
-    torsion_list = get_sidechain_torsions(filename, model)
+    torsion_list = _sidechain_torsions(filename, model)
 
     for item in torsion_list:
         print('{:>3}'.format(item[0]), item[1], end=' ')
         for chi in item[2]:
-            print('{!s:>8}'.format(chi), end=' ')
+            print('{:>8}'.format(chi), end=' ')
         print()
+
+    print(chi_angles(filename))
