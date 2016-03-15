@@ -23,7 +23,7 @@ def save_torsions_to_db(db_name='data/torsions.db'):
                 angles['phi'],
                 angles['psi'],
                 angles['omega'],
-                *chis
+                chis
             )
         except Exception as e:
             print(e)

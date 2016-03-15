@@ -36,7 +36,7 @@ def dihedral_angles(pdb_filepath):
     psi = []
     omega = []
 
-    for i in range(len(result)):
+    for i in range(len(result[0])):
         try:
             residues += three_to_one(result[1][i])
         except Exception as e:
@@ -44,13 +44,10 @@ def dihedral_angles(pdb_filepath):
                 'Could not get one letter code for ' + result[1][i])
             logger.debug(e)
         else:
-            try:
-                indices.append(float(result[0][i]))
-                phi.append(float(result[2][i]))
-                psi.append(float(result[3][i]))
-                omega.append(float(result[4][i]))
-            except:
-                import pdb; pdb.set_trace()
+            indices.append(int(result[0][i]))
+            phi.append(float(result[2][i]))
+            psi.append(float(result[3][i]))
+            omega.append(float(result[4][i]))
 
     return dict(
         residues=residues, phi=phi, psi=psi, omega=omega, indices=indices)

@@ -71,7 +71,7 @@ def chi_angles(filepath, model_id=0):
 
     :return: A list composed by a list of chi1, a list of chi2, etc.
     """
-    torsions_list = _sidechain_torsions(filename, model_id)
+    torsions_list = _sidechain_torsions(filepath, model_id)
     chis = [item[2] for item in torsions_list]
     return list(zip(*chis))
 
@@ -115,5 +115,3 @@ if __name__ == "__main__":
         for chi in item[2]:
             print('{:>8}'.format(chi), end=' ')
         print()
-
-    print(chi_angles(filename))
