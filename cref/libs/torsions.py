@@ -44,7 +44,7 @@ def dihedral_angles(pdb_filepath):
                 'Could not get one letter code for ' + result[1][i])
             logger.debug(e)
         else:
-            indices.append(int(result[0][i]))
+            indices.append(result[0][i])
             phi.append(float(result[2][i]))
             psi.append(float(result[3][i]))
             omega.append(float(result[4][i]))

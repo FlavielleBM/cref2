@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import sys
@@ -94,11 +95,17 @@ def _sidechain_torsions(filename, model_id):
             chis = [float('nan')] * CHI_COUNT
             for i, chi_res in enumerate(CHI_ATOMS):
                 if res_name in chi_res:
-                    atom_list = chi_res[res_name]
-                    vec_atoms = [res[a] for a in atom_list]
-                    vectors = [a.get_vector() for a in vec_atoms]
-                    angle = PDB.calc_dihedral(*vectors)
-                    chis[i] = round(math.degrees(angle), 3)
+                    try:
+                        atom_list = chi_res[res_name]
+                        vec_atoms = [res[a] for a in atom_list]
+                        vectors = [a.get_vector() for a in vec_atoms]
+                        angle = PDB.calc_dihedral(*vectors)
+                        chis[i] = round(math.degrees(angle), 3)
+                    except KeyError as error:
+                        logging.info(
+                            "Residue doesn't have required atoms.",
+                            res_name, res.get_list(), error
+                        )
 
             resi = "{0}{1}".format(res.id[1], res.id[2].strip())
             torsion_list.append([resi, res_name, chis])
