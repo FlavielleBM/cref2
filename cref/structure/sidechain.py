@@ -78,7 +78,7 @@ def chi_angles(filepath, model_id=0):
 
 def _sidechain_torsions(filename, model_id):
 
-    parser = PDB.PDBParser()
+    parser = PDB.PDBParser(QUIET=True)
     structure_id = os.path.splitext(os.path.basename(filename))[0][-4:]
     structure = parser.get_structure(structure_id, filename)
     model = structure.get_list()[model_id]
