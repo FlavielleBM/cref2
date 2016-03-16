@@ -137,6 +137,16 @@ class BaseApp:
                     identity = self.pdb_identities[(hsp.pdb_code, hsp.chain)]
 
             if identity <= self.excluded_identity:
+                template = dict(
+                    phi=angles['phi'][start:end],
+                    psi=angles['psi'][start:end],
+                    omega=angles['omega'][start:end],
+                    chi1=angles['chis'][0][start:end],
+                    chi2=angles['chis'][1][start:end],
+                    chi3=angles['chis'][2][start:end],
+                    chi4=angles['chis'][3][start:end],
+                    chi5=angles['chis'][4][start:end],
+                )
                 if hsp_ss[start:end]:
                     return dict(
                         pdb=hsp.pdb_code,
@@ -151,7 +161,7 @@ class BaseApp:
                         score=hsp.score,
                         phi=round(phi, 2),
                         psi=round(psi, 2),
-                    )
+                    ), template
             else:
                 logger.info('Skipping {}, identity {}  > {}'.format(
                     hsp.pdb_code.upper() + ':' + hsp.chain.upper(),
@@ -169,6 +179,7 @@ class BaseApp:
 
     def get_structures_for_blast(self, fragment, ss, hsps):
         blast_structures = []
+        templates = []
         hsps.sort(key=lambda hsp: (hsp.identities, hsp.score), reverse=True)
         for hsp in hsps:
             if len(blast_structures) < self.max_templates:
@@ -179,8 +190,9 @@ class BaseApp:
                             pdb_code))
                     elif pdb_code not in self.failed_pdbs:
                         angles = self.get_torsion_angles(pdb_code)
-                        structure = self.get_hsp_structure(
+                        structure, template = self.get_hsp_structure(
                             fragment, ss, hsp, angles)
+                        templates.append(template)
                         if structure:
                             blast_structures.append(structure)
                 except KeyError as e:
@@ -192,7 +204,7 @@ class BaseApp:
             else:
                 break
 
-        return blast_structures
+        return blast_structures, templates
 
     def get_secondary_structure(self, aa_sequence, output_dir):
         self.reporter('PREDICTING_SECONDARY_STRUCTURE')
@@ -214,7 +226,7 @@ class BaseApp:
         hsps = self.blast.align(fragment, self.blast_args)
 
         self.reporter('RUNNING_TORSIONS')
-        blast_structures = self.get_structures_for_blast(
+        blast_structures, templates = self.get_structures_for_blast(
             fragment, ss, hsps)
         blast_structures = pandas.DataFrame(
             blast_structures,
@@ -248,7 +260,7 @@ class BaseApp:
             selector='ss',
             name="{} ({})".format(fragment[self.central], fragment),
             output_writer=self.pdf_writer,
-        )
+        ) + (templates,)
 
     def display_elapsed_time(self, start_time):
         elapsed_time = time.time() - start_time
@@ -302,6 +314,7 @@ class BaseApp:
         plt.close()
 
     def run(self, aa_sequence, output_dir):
+        template_library = []
         self.sequence = aa_sequence
         report_dir = os.path.join(output_dir, 'report')
 
@@ -331,8 +344,9 @@ class BaseApp:
                     i + 1, fragments_len))
                 ss = fragments_ss[i]
 
-                angles, inertia = self.get_angles_for_fragment(
+                angles, inertia, templates = self.get_angles_for_fragment(
                     fragment, ss, i, report_dir)
+                template_library.append(templates)
                 dihedral_angles.append(angles)
                 inertias.append(inertia)
                 logger.info('-' * 30)

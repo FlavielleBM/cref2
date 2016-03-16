@@ -49,7 +49,7 @@ def configure_logger(log_level='INFO'):
     ch = logging.StreamHandler()
     ch.setLevel(level)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        '%(asctime)s - %(name)s - %(levelname)s (%(pathname)s, %(lineno)d)- %(message)s',
         datefmt='%d/%m/%Y %I:%M:%S %p'
     )
 
