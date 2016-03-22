@@ -1,7 +1,8 @@
-import os
-import time
 import logging
 import math
+import os
+import pickle
+import time
 
 import pandas
 import matplotlib.pyplot as plt
@@ -168,6 +169,7 @@ class BaseApp:
                     round(identity, 2),
                     self.excluded_identity)
                 )
+        return None, None
 
     def get_torsion_angles(self, pdb_code):
         if pdb_code not in self.torsions:
@@ -363,6 +365,8 @@ class BaseApp:
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
+        template_file = os.path.join(output_dir, 'template_library.pkl')
+        pickle.dump(template_library, open(template_file, 'wb'))
         self.display_elapsed_time(start_time)
         self.excel_writer.close()
         return os.path.abspath(output_file)
