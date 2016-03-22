@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 from Bio import pairwise2
+from Bio.PDB.Polypeptide import one_to_three
 
 from cref import sequence
 from cref.sequence.alignment import Blast
@@ -138,16 +139,35 @@ class BaseApp:
                     identity = self.pdb_identities[(hsp.pdb_code, hsp.chain)]
 
             if identity <= self.excluded_identity:
-                template = dict(
-                    phi=angles['phi'][start:end],
-                    psi=angles['psi'][start:end],
-                    omega=angles['omega'][start:end],
-                    chi1=angles['chis'][0][start:end],
-                    chi2=angles['chis'][1][start:end],
-                    chi3=angles['chis'][2][start:end],
-                    chi4=angles['chis'][3][start:end],
-                    chi5=angles['chis'][4][start:end],
-                )
+
+                try:
+                    template = dict()
+                    for i in range(start, end):
+                        try:
+                            index = int(angles['indices'][i])
+                        except ValueError:
+                            # Remove last character in 181A, 182B...
+                            index = int(angles['indices'][i][:-1])
+
+                        template[index] = dict(
+                            NAME=one_to_three(angles['residues'][i]),
+                            PHI=angles['phi'][i],
+                            PSI=angles['psi'][i],
+                            OMEGA=angles['omega'][i],
+                        )
+                        for j in range(5):
+                            chi = 'CHI{}'.format(j + 1)
+                            template[index][chi] = angles['chis'][j][i]
+                            if math.isnan(template[index][chi]):
+                                template[index][chi] = None
+
+                except IndexError:
+                    raise IndexError(
+                        "PDB {} doesn't include the required sequence.".format(
+                            hsp.pdb_code
+                        )
+                    )
+
                 if hsp_ss[start:end]:
                     return dict(
                         pdb=hsp.pdb_code,
@@ -197,12 +217,9 @@ class BaseApp:
                         templates.append(template)
                         if structure:
                             blast_structures.append(structure)
-                except KeyError as e:
-                    self.failed_pdbs.append(pdb_code)
-                    logger.debug(e)
                 except Exception as e:
                     self.failed_pdbs.append(pdb_code)
-                    logger.warn(e)
+                    logger.debug(e)
             else:
                 break
 
