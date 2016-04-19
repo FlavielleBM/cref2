@@ -113,7 +113,7 @@ class BaseApp:
             )
         return ('', None, None)
 
-    def get_hsp_structure(self, fragment, ss, hsp, angles):
+    def get_hsp_structure(self, fragment, ss, hsp, angles, index):
         identity = -1
         residue, phi, psi = self.get_central_angles(angles, hsp)
 
@@ -143,12 +143,6 @@ class BaseApp:
                 try:
                     template = dict()
                     for i in range(start, end):
-                        try:
-                            index = int(angles['indices'][i])
-                        except ValueError:
-                            # Remove last character in 181A, 182B...
-                            index = int(angles['indices'][i][:-1])
-
                         template[index] = dict(
                             NAME=one_to_three(angles['residues'][i]),
                             PHI=angles['phi'][i],
@@ -160,6 +154,7 @@ class BaseApp:
                             template[index][chi] = angles['chis'][j][i]
                             if math.isnan(template[index][chi]):
                                 template[index][chi] = None
+                        index += 1
 
                 except IndexError:
                     raise IndexError(
@@ -199,7 +194,7 @@ class BaseApp:
             angles = self.torsions[pdb_code]
         return angles
 
-    def get_structures_for_blast(self, fragment, ss, hsps):
+    def get_structures_for_blast(self, fragment, ss, hsps, index):
         blast_structures = []
         templates = []
         hsps.sort(key=lambda hsp: (hsp.identities, hsp.score), reverse=True)
@@ -213,7 +208,7 @@ class BaseApp:
                     elif pdb_code not in self.failed_pdbs:
                         angles = self.get_torsion_angles(pdb_code)
                         structure, template = self.get_hsp_structure(
-                            fragment, ss, hsp, angles)
+                            fragment, ss, hsp, angles, index)
                         templates.append(template)
                         if structure:
                             blast_structures.append(structure)
@@ -246,7 +241,7 @@ class BaseApp:
 
         self.reporter('RUNNING_TORSIONS')
         blast_structures, templates = self.get_structures_for_blast(
-            fragment, ss, hsps)
+            fragment, ss, hsps, index)
         blast_structures = pandas.DataFrame(
             blast_structures,
             columns=[
