@@ -36,7 +36,7 @@ def run_cref(aa_sequence, output_dir, params):
     return app.run(aa_sequence, output_dir)
 
 
-def configure_logger(log_level='INFO'):
+def configure_logger(log_level='INFO', include_pathname=False):
     logger = logging.getLogger('CReF')
     level = getattr(logging, log_level.upper(), None)
     if not isinstance(level, int):
@@ -48,11 +48,13 @@ def configure_logger(log_level='INFO'):
 
     ch = logging.StreamHandler()
     ch.setLevel(level)
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s (%(pathname)s, %(lineno)d)- %(message)s',
-        datefmt='%d/%m/%Y %I:%M:%S %p'
-    )
+    if include_pathname:
+        template = ('%(asctime)s - %(name)s - %(levelname)s'
+                    '(%(pathname)s, %(lineno)d)- %(message)s')
+    else:
+        template = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
+    formatter = logging.Formatter(template, datefmt='%d/%m/%Y %I:%M:%S %p')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
