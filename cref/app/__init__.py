@@ -203,7 +203,7 @@ class BaseApp:
                 try:
                     pdb_code = hsp.pdb_code
                     if pdb_code in self.excluded_pdbs:
-                        logger.info('Skipping pdb {} (given in params'.format(
+                        logger.info('Skipping pdb {} (given in params)'.format(
                             pdb_code))
                     elif pdb_code not in self.failed_pdbs:
                         angles = self.get_torsion_angles(pdb_code)
