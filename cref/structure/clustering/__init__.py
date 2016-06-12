@@ -77,7 +77,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     X = np.vstack((zip(phi_scaler.transform(phi), psi_scaler.transform(psi))))
     X = sparse.hstack((X, encoded_structures))
 
-    model = KMeans(init='k-means++', n_clusters=n_clusters)
+    model = KMeans(init='k-means++', n_clusters=n_clusters, random_state=1)
     model.fit(X)
     if selector == "score":
         angles = selectors.top_scoring(model, scores)
