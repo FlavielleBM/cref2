@@ -6,6 +6,7 @@ import time
 
 import pandas
 import matplotlib.pyplot as plt
+# plt.style.use('ggplot')
 from matplotlib.backends.backend_pdf import PdfPages
 
 from Bio import pairwise2
@@ -264,7 +265,8 @@ class BaseApp:
             blast_structures,
             "{} ({})".format(fragment[self.central], fragment),
             target,
-            output_writer=self.pdf_writer
+            output_writer=self.pdf_writer,
+            output_dir=output_dir,
         )
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
@@ -274,6 +276,7 @@ class BaseApp:
             selector='ss',
             name="{} ({})".format(fragment[self.central], fragment),
             output_writer=self.pdf_writer,
+            output_dir=output_dir,
         ) + (templates,)
 
     def display_elapsed_time(self, start_time):
@@ -314,17 +317,23 @@ class BaseApp:
                 round(psi_diff[i], 2),
             ))
         plt.plot(range(len(aa)), phi_diff, label='$\phi$', color='g')
-        plt.plot(range(len(aa)), psi_diff, label='$\psi$')
+        plt.plot(range(len(aa)), psi_diff, label='$\psi$', linestyle='dashed')
+        plt.xlabel("Resíduo")
+        plt.ylabel("RMSD")
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.savefig(os.path.join(output_dir, 'dihedrals.png'), dpi=150)
+        plt.savefig(
+            os.path.join(output_dir, 'dihedrals.svg'), dpi=300, format='svg')
         plt.close()
 
     def log_inertias(self, inertias, aa, output_dir):
         plt.figure()
         plt.plot(range(len(aa)), inertias, label='$\phi$')
+        plt.xlabel("Resíduo")
+        plt.ylabel("Inércia")
         plt.xticks(range(len(aa)), [x for x in aa])
-        plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=150)
+        plt.savefig(
+            os.path.join(output_dir, 'inertias.png'), dpi=300, format='svg')
         plt.close()
 
     def run(self, aa_sequence, output_dir):
@@ -334,6 +343,8 @@ class BaseApp:
 
         if not os.path.exists(report_dir):
             os.makedirs(report_dir)
+            os.makedirs(os.path.join(report_dir, 'ramachandran'))
+            os.makedirs(os.path.join(report_dir, 'clustering'))
 
         self.excel_writer = pandas.ExcelWriter(
             os.path.join(report_dir, 'templates.xlsx'))
