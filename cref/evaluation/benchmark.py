@@ -105,11 +105,14 @@ def download_pdb(pdb_code, filepath):
 
 def read_config():
     pdb_id = sys.argv[1].upper()
+    excluded_pdbs = [x.strip() for x in sys.argv[2].split()]
+    excluded_pdbs.append(pdb_id)
+
     fragment_size = [5, 7, 9]
-    number_of_clusters = [4, 6, 8, 10]
+    number_of_clusters = [4, 6, 8]
     matrix = ["PAM30", "BLOSUM62"]
-    max_templates = [50, 100, 200]
-    number_of_alignments = [500, 1000]
+    max_templates = [50, 100]
+    number_of_alignments = [500]
     params_list = []
     print(len(list(itertools.product(
             fragment_size,
@@ -126,7 +129,7 @@ def read_config():
         print(f, c, t, a, m)
         params = {
             "id": '_'.join([str(x) for x in (f, c, t, a, m)]),
-            "exclude": {"pdbs": [pdb_id]},
+            "exclude": {"pdbs": excluded_pdbs},
             "fragment_size": f,
             "number_of_clusters": c,
             "max_templates": t,
@@ -167,6 +170,20 @@ def run_pymol(pdb_code, predicted_filepath):
     return rmsd, imagepath
 
 
+def rmsds_to_csv(rmsds, filename):
+    results = []
+
+    for key, value in rmsds.items():
+            results.append(key + (value,))
+
+    df = pandas.DataFrame(
+        results,
+        columns=['fragment_size', 'group_count', 'max_templates',
+                 'max_blast', 'matrix', 'rmsd']
+    )
+    df.to_csv(filename + '.rmsd.csv')
+
+
 def main():
     configure_logger('WARN')
     test_cases = read_config()
@@ -196,6 +213,8 @@ def main():
             print(error)
             print(params)
     print(results)
+    rmsds_to_csv(results, params['pdb'])
+
 
 if __name__ == '__main__':
     main()
