@@ -8,7 +8,7 @@ from cref.structure import sidechain
 from cref.structure.torsions import TorsionAnglesDB
 
 
-def save_torsions_to_db(pdbs_filepath, db):
+def save_torsions_to_db(db, pdbs_filepath):
     pdbs = glob.glob(os.path.join(pdbs_filepath, '*/*.ent'))
     print(pdbs)
     failed_torsions = []
@@ -42,10 +42,14 @@ def save_pdb_torsions_to_db(db, pdb_filepath):
 
 if __name__ == '__main__':
     import sys
-    db_name = sys.argv[2]
-    pdbs_filepath = sys.argv[1]
+    db_name = sys.argv[1]
+    pdbs_filepath = sys.argv[2]
 
     db = TorsionAnglesDB(db_name)
     db.create()
-    save_torsions_to_db(pdbs_filepath, db)
+
+    if pdbs_filepath.endswith('.pdb') or pdbs_filepath.endswith('.ent'):
+        save_pdb_torsions_to_db(db, pdbs_filepath)
+    else:
+        save_torsions_to_db(db, pdbs_filepath)
     db.close()
