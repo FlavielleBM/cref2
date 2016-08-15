@@ -208,6 +208,7 @@ def main():
             )
             print('Prediction written to', output_files)
             os.remove(fasta_file)
+            rmsds_to_csv(results, params['pdb'])
     print(results)
     rmsds_to_csv(results, params['pdb'])
 
