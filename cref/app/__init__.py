@@ -304,20 +304,25 @@ class BaseApp:
         psi_diff = []
 
         for i in range(len(angles)):
-            phi_diff.append(180 - abs(180 - abs(exp_phi[i] - pred_phi[i])))
-            psi_diff.append(180 - abs(180 - abs(exp_psi[i] - pred_psi[i])))
-            logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                aa[i],
-                ss[i],
-                round(exp_phi[i], 2),
-                round(pred_phi[i], 2),
-                round(phi_diff[i], 2),
-                round(exp_psi[i], 2),
-                round(pred_psi[i], 2),
-                round(psi_diff[i], 2),
-            ))
-        plt.plot(range(len(aa)), phi_diff, label='$\phi$', color='g')
-        plt.plot(range(len(aa)), psi_diff, label='$\psi$', linestyle='dashed')
+            try:
+                phi_diff.append(180 - abs(180 - abs(exp_phi[i] - pred_phi[i])))
+                psi_diff.append(180 - abs(180 - abs(exp_psi[i] - pred_psi[i])))
+                logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                    aa[i],
+                    ss[i],
+                    round(exp_phi[i], 2),
+                    round(pred_phi[i], 2),
+                    round(phi_diff[i], 2),
+                    round(exp_psi[i], 2),
+                    round(pred_psi[i], 2),
+                    round(psi_diff[i], 2),
+                ))
+            except Exception as error:
+                print(error)
+                break
+        plt.plot(range(len(phi_diff)), phi_diff, label='$\phi$', color='g')
+        plt.plot(
+            range(len(psi_diff)), psi_diff, label='$\psi$', linestyle='dashed')
         plt.xlabel("Resíduo")
         plt.ylabel("RMSD")
         plt.xticks(range(len(aa)), [x for x in aa])
@@ -381,9 +386,12 @@ class BaseApp:
         inertias += [0] * self.central
 
         if 'pdb' in self.params:
-            self.log_dihedrals(
-                dihedral_angles, aa_sequence, ss_seq, report_dir)
-            self.log_inertias(inertias, aa_sequence, report_dir)
+            try:
+                self.log_dihedrals(
+                    dihedral_angles, aa_sequence, ss_seq, report_dir)
+                self.log_inertias(inertias, aa_sequence, report_dir)
+            except Exception as error:
+                print(error)
 
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')

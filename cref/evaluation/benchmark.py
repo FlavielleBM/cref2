@@ -109,17 +109,17 @@ def read_config():
     excluded_pdbs.append(pdb_id)
 
     fragment_size = [5, 7, 9]
-    number_of_clusters = [4, 6, 8]
+    number_of_clusters = [4, 6, 8, 10]
     matrix = ["PAM30", "BLOSUM62"]
     max_templates = [50, 100]
-    number_of_alignments = [500]
+    number_of_alignments = [2000]
     params_list = []
     print(len(list(itertools.product(
-            fragment_size,
-            number_of_clusters,
-            matrix,
-            max_templates,
-            number_of_alignments))))
+        fragment_size,
+        number_of_clusters,
+        matrix,
+        max_templates,
+        number_of_alignments))))
     for f, c, m, t, a in itertools.product(
             fragment_size,
             number_of_clusters,
@@ -128,7 +128,7 @@ def read_config():
             number_of_alignments):
         print(f, c, t, a, m)
         params = {
-            "id": '_'.join([str(x) for x in (f, c, t, a, m)]),
+            "id": (f, c, t, a, m),
             "exclude": {"pdbs": excluded_pdbs},
             "fragment_size": f,
             "number_of_clusters": c,
@@ -143,9 +143,9 @@ def read_config():
         }
         params['pdb'] = pdb_id
         params['output_dir'] = os.path.join(
-                'predictions/benchmark',
-                params['pdb'],
-                '_'.join([str(x) for x in (f, c, t, a, m)]),
+            'predictions/benchmark',
+            params['pdb'],
+            '_'.join([str(x) for x in (f, c, t, a, m)]),
         )
         params_list.append(params)
     return params_list
@@ -185,18 +185,17 @@ def rmsds_to_csv(rmsds, filename):
 
 
 def main():
-    configure_logger('WARN')
+    configure_logger('INFO')
     test_cases = read_config()
     results = {}
 
     for params in test_cases:
-        try:
             print('Predicting', params['pdb'], params['id'])
             handler, fasta_file = tempfile.mkstemp(
-                    suffix='.fasta', prefix='tmp')
+                suffix='.fasta', prefix='tmp')
             download_fasta(params['pdb'], fasta_file)
             output_files = predict_fasta(
-                    fasta_file, params['output_dir'], params)
+                fasta_file, params['output_dir'], params)
             rmsd, imagepath = run_pymol(params['pdb'], output_files[0])
             output_file = os.path.join(params['output_dir'], 'rmsd.txt')
             with open(output_file, 'w') as rmsd_file:
@@ -204,14 +203,11 @@ def main():
             results[params['id']] = rmsd
 
             shutil.copyfile(
-                    imagepath,
-                    os.path.join(params['output_dir'], 'alignment-pymol.png'),
+                imagepath,
+                os.path.join(params['output_dir'], 'alignment-pymol.png'),
             )
             print('Prediction written to', output_files)
             os.remove(fasta_file)
-        except Exception as error:
-            print(error)
-            print(params)
     print(results)
     rmsds_to_csv(results, params['pdb'])
 
