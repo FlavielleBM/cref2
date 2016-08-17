@@ -325,6 +325,8 @@ class BaseApp:
         plt.plot(range(len(aa)), inertias, label='$\phi$')
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=150)
+        pickle.dump(
+            inertias, open(os.path.join(output_dir, 'inertias.pkl'), 'wb'))
         plt.close()
 
     def run(self, aa_sequence, output_dir):
@@ -343,7 +345,7 @@ class BaseApp:
 
         # Aminoacids in the beggining have unknown phi and psi
         dihedral_angles = [(180, 180)] * self.central
-        inertias = [0] * self.central
+        inertias = [float('nan')] * self.central
 
         ss_seq, fragments_ss = self.get_secondary_structure(
             aa_sequence, output_dir)
@@ -367,7 +369,7 @@ class BaseApp:
 
         # Amino acids in the end have unbound angles
         dihedral_angles += [(180, 180)] * self.central
-        inertias += [0] * self.central
+        inertias += [float('nan')] * self.central
 
         if 'pdb' in self.params:
             self.log_dihedrals(
