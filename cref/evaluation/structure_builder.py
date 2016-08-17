@@ -41,7 +41,7 @@ def write_pdb_tleap(output_filepath, sequence, phi, psi):
 
     leapfile.close()
     subprocess.check_call(['tleap', '-f', leapfile.name])
-    # os.remove(leapfile.name)
+    os.remove(leapfile.name)
 
 
 input_filepath = sys.argv[1]

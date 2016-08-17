@@ -1,4 +1,5 @@
 import logging
+import os
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import OneHotEncoder
@@ -18,7 +19,7 @@ logger = logging.getLogger('CReF')
 
 
 def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
-                  output_writer=None):
+                  output_writer=None, output_dir=None):
     ramachandran_surface()
     X = SX.todense()
     # Start from 10 to avoid blacks
@@ -26,7 +27,7 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
     for k, color in zip(range(model.n_clusters), colors):
         col = cm.spectral(int(color))
         my_members = model.labels_ == k
-        cluster_center = model.cluster_centers_[k]
+        # cluster_center = model.cluster_centers_[k]
         plt.scatter(
             x=phi_scaler.inverse_transform(X[my_members, 0]),
             y=psi_scaler.inverse_transform(X[my_members, 1]),
@@ -35,28 +36,21 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
             marker='o',
             alpha=0.5
         )
-        if angles[0] == cluster_center[0]:
-            plt.plot(
-                phi_scaler.inverse_transform(cluster_center[0]),
-                psi_scaler.inverse_transform(cluster_center[1]),
-                'D', markerfacecolor=col, markeredgecolor='k', markersize=8
-            )
-        else:
-            plt.plot(
-                phi_scaler.inverse_transform(cluster_center[0]),
-                psi_scaler.inverse_transform(cluster_center[1]),
-                '*', markerfacecolor=col, markeredgecolor='k', markersize=10
-            )
         plt.title('Clusters for {} (inertia: {:.2})'.format(
             fragment, model.inertia_))
     if output_writer:
         output_writer.savefig(dpi=150)
+    if output_dir:
+        plt.savefig(
+            os.path.join(output_dir, 'clustering', fragment + '.cluster.svg'),
+            format='svg', dpi=300,
+        )
     plt.close()
 
 
 def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
                            selector="ss", name="cluster_plot",
-                           output_writer=None):
+                           output_writer=None, output_dir=None):
     phi = blast_structures['phi']
     psi = blast_structures['psi']
     structures = blast_structures['central_ss']
@@ -77,7 +71,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     X = np.vstack((zip(phi_scaler.transform(phi), psi_scaler.transform(psi))))
     X = sparse.hstack((X, encoded_structures))
 
-    model = KMeans(init='k-means++', n_clusters=n_clusters)
+    model = KMeans(init='k-means++', n_clusters=n_clusters, random_state=1)
     model.fit(X)
     if selector == "score":
         angles = selectors.top_scoring(model, scores)
@@ -88,7 +82,10 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     logger.info('Selected cluster: {} {}'.format(
         ss, angles[2:], chr(enc.active_features_[np.argmax(angles[2:])])))
     plot_clusters(
-        model, X, angles, phi_scaler, psi_scaler, name, output_writer)
+        model, X, angles,
+        phi_scaler, psi_scaler,
+        name, output_writer, output_dir,
+    )
     angles = (
         phi_scaler.inverse_transform(angles[0]),
         psi_scaler.inverse_transform(angles[1])

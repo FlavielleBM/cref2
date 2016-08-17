@@ -10,12 +10,12 @@ from cref.app.terminal import download_fasta, read_fasta
 
 
 def main():
-    pdbs = ['1zdd', '1gb1', '1c5a', '1opd', '1gab']
+    pdbs = ['1zdd']
 
-    runs = 5
-    fragment_sizes = [5, 7, 9]
-    number_of_clusters = [4, 6, 8, 10]
-    number_of_templates = [50,  100]
+    runs = 4
+    fragment_sizes = [5]
+    number_of_clusters = [4]
+    number_of_templates = [50]
 
     # configure_logger()
 

@@ -6,6 +6,7 @@ import time
 
 import pandas
 import matplotlib.pyplot as plt
+# plt.style.use('ggplot')
 from matplotlib.backends.backend_pdf import PdfPages
 
 from Bio import pairwise2
@@ -203,7 +204,7 @@ class BaseApp:
                 try:
                     pdb_code = hsp.pdb_code
                     if pdb_code in self.excluded_pdbs:
-                        logger.info('Skipping pdb {} (given in params'.format(
+                        logger.info('Skipping pdb {} (given in params)'.format(
                             pdb_code))
                     elif pdb_code not in self.failed_pdbs:
                         angles = self.get_torsion_angles(pdb_code)
@@ -264,7 +265,8 @@ class BaseApp:
             blast_structures,
             "{} ({})".format(fragment[self.central], fragment),
             target,
-            output_writer=self.pdf_writer
+            output_writer=self.pdf_writer,
+            output_dir=output_dir,
         )
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
@@ -274,6 +276,7 @@ class BaseApp:
             selector='ss',
             name="{} ({})".format(fragment[self.central], fragment),
             output_writer=self.pdf_writer,
+            output_dir=output_dir,
         ) + (templates,)
 
     def display_elapsed_time(self, start_time):
@@ -301,32 +304,44 @@ class BaseApp:
         psi_diff = []
 
         for i in range(len(angles)):
-            phi_diff.append(180 - abs(180 - abs(exp_phi[i] - pred_phi[i])))
-            psi_diff.append(180 - abs(180 - abs(exp_psi[i] - pred_psi[i])))
-            logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
-                aa[i],
-                ss[i],
-                round(exp_phi[i], 2),
-                round(pred_phi[i], 2),
-                round(phi_diff[i], 2),
-                round(exp_psi[i], 2),
-                round(pred_psi[i], 2),
-                round(psi_diff[i], 2),
-            ))
-        plt.plot(range(len(aa)), phi_diff, label='$\phi$', color='g')
-        plt.plot(range(len(aa)), psi_diff, label='$\psi$')
+            try:
+                phi_diff.append(180 - abs(180 - abs(exp_phi[i] - pred_phi[i])))
+                psi_diff.append(180 - abs(180 - abs(exp_psi[i] - pred_psi[i])))
+                logger.info('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
+                    aa[i],
+                    ss[i],
+                    round(exp_phi[i], 2),
+                    round(pred_phi[i], 2),
+                    round(phi_diff[i], 2),
+                    round(exp_psi[i], 2),
+                    round(pred_psi[i], 2),
+                    round(psi_diff[i], 2),
+                ))
+            except Exception as error:
+                print(error)
+                break
+        plt.plot(range(len(phi_diff)), phi_diff, label='$\phi$', color='g')
+        plt.plot(
+            range(len(psi_diff)), psi_diff, label='$\psi$', linestyle='dashed')
+        plt.xlabel("Resíduo")
+        plt.ylabel("RMSD")
         plt.xticks(range(len(aa)), [x for x in aa])
         plt.legend()
-        plt.savefig(os.path.join(output_dir, 'dihedrals.png'), dpi=150)
+        plt.savefig(
+            os.path.join(output_dir, 'dihedrals.svg'), dpi=300, format='svg')
         plt.close()
 
     def log_inertias(self, inertias, aa, output_dir):
         plt.figure()
         plt.plot(range(len(aa)), inertias, label='$\phi$')
+        plt.xlabel("Resíduo")
+        plt.ylabel("Inércia")
         plt.xticks(range(len(aa)), [x for x in aa])
-        plt.savefig(os.path.join(output_dir, 'inertias.png'), dpi=150)
+        plt.savefig(
+            os.path.join(output_dir, 'inertias.svg'), dpi=300, format='svg')
         pickle.dump(
             inertias, open(os.path.join(output_dir, 'inertias.pkl'), 'wb'))
+
         plt.close()
 
     def run(self, aa_sequence, output_dir):
@@ -336,6 +351,8 @@ class BaseApp:
 
         if not os.path.exists(report_dir):
             os.makedirs(report_dir)
+            os.makedirs(os.path.join(report_dir, 'ramachandran'))
+            os.makedirs(os.path.join(report_dir, 'clustering'))
 
         self.excel_writer = pandas.ExcelWriter(
             os.path.join(report_dir, 'templates.xlsx'))
@@ -372,9 +389,12 @@ class BaseApp:
         inertias += [float('nan')] * self.central
 
         if 'pdb' in self.params:
-            self.log_dihedrals(
-                dihedral_angles, aa_sequence, ss_seq, report_dir)
-            self.log_inertias(inertias, aa_sequence, report_dir)
+            try:
+                self.log_dihedrals(
+                    dihedral_angles, aa_sequence, ss_seq, report_dir)
+                self.log_inertias(inertias, aa_sequence, report_dir)
+            except Exception as error:
+                print(error)
 
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')

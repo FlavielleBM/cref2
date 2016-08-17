@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt
@@ -65,13 +66,14 @@ def ramachandran_surface():
 
 
 def ramachandran(torsion_angles, fragment, target_pdb=None,
-                 output_writer=None):
+                 output_writer=None, output_dir=None):
     """
     Plot ramachandran of a set of torsion angles for a given fragment
 
     :param torsion_angles: Dictionary with torsion angles phi and psi
     :param fragment: Fragment identifier, used for displaying purposes
     """
+    target_pdb = None
     plt.figure()
     ramachandran_surface()
     plt.title('Ramachandran plot for ' + fragment)
@@ -94,4 +96,9 @@ def ramachandran(torsion_angles, fragment, target_pdb=None,
         )
     if output_writer:
         output_writer.savefig(dpi=150)
+    if output_dir:
+        plt.savefig(
+            os.path.join(output_dir, 'ramachandran', fragment + '.svg'),
+            format='svg', dpi=300
+        )
     plt.close()

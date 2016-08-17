@@ -1,30 +1,22 @@
 #!/usr/bin/env python
 
 import glob
+import os
+
 from cref.libs import torsions
 from cref.structure import sidechain
 from cref.structure.torsions import TorsionAnglesDB
 
 
-def save_torsions_to_db(db_name='data/torsions.db'):
-    db.create()
-    pdbs = glob.glob('data/pdb/*/*.ent')
+def save_torsions_to_db(db, pdbs_filepath):
+    pdbs = glob.glob(os.path.join(pdbs_filepath, '*/*.ent'))
+    print(pdbs)
     failed_torsions = []
 
     for i, pdb_filepath in enumerate(pdbs):
-        print(i, pdb_filepath[15:19].upper())
+        print(i, pdb_filepath[-8: -4].upper())
         try:
-            angles = torsions.dihedral_angles(pdb_filepath)
-            chis = sidechain.chi_angles(pdb_filepath)
-            db.save(
-                pdb_filepath[15:19],
-                angles['residues'],
-                angles['indices'],
-                angles['phi'],
-                angles['psi'],
-                angles['omega'],
-                chis
-            )
+            save_pdb_torsions_to_db(db, pdb_filepath)
         except Exception as e:
             print(e)
             failed_torsions.append(pdb_filepath)
@@ -33,9 +25,31 @@ def save_torsions_to_db(db_name='data/torsions.db'):
         failed_torsions_file.write(''.join(failed_torsions))
 
 
+def save_pdb_torsions_to_db(db, pdb_filepath):
+    angles = torsions.dihedral_angles(pdb_filepath)
+    chis = sidechain.chi_angles(pdb_filepath)
+
+    db.save(
+        pdb_filepath[-8: -4],
+        angles['residues'],
+        angles['indices'],
+        angles['phi'],
+        angles['psi'],
+        angles['omega'],
+        chis
+    )
+
+
 if __name__ == '__main__':
     import sys
-    db = TorsionAnglesDB(sys.argv[2])
+    db_name = sys.argv[1]
+    pdbs_filepath = sys.argv[2]
+
+    db = TorsionAnglesDB(db_name)
     db.create()
-    save_torsions_to_db(sys.argv[1])
+
+    if pdbs_filepath.endswith('.pdb') or pdbs_filepath.endswith('.ent'):
+        save_pdb_torsions_to_db(db, pdbs_filepath)
+    else:
+        save_torsions_to_db(db, pdbs_filepath)
     db.close()
