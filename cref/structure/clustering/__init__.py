@@ -70,7 +70,6 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
 
     X = np.hstack((phi_scaler.transform(phi), psi_scaler.transform(psi)))
     X = sparse.hstack((X, encoded_structures))
-    print("SHAPEFIM", X.shape)
 
     model = KMeans(init='k-means++', n_clusters=n_clusters, random_state=1)
     model.fit(X)
