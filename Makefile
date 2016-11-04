@@ -35,7 +35,7 @@ peptide:
 
 
 python_packages:
-	virtualenv --python=/usr/bin/python3.4 env
+	virtualenv --python=/usr/bin/python3.5 env
 	bash -i -c "source env/bin/activate && pip install -r requirements.txt"
 	bash -i -c "source env/bin/activate && pip install git+https://github.com/mchelem/porter_paleale"
 
@@ -45,10 +45,11 @@ server_packages:
 
 
 packages:
-	sudo apt-get install -y tcl8.4-dev tk8.4-dev libpng3
+	sudo apt-get install -y git
+	sudo apt-get install -y tcl8.4-dev tk8.4-dev
 	sudo apt-get install -y liblapack-dev gcc gfortran
 	sudo apt-get install -y ncbi-blast+
-	sudo apt-get install -y python3.4 python3.4-dev python3.4-tk python-virtualenv
+	sudo apt-get install -y python3.5 python3.5-dev python3.5-tk python-virtualenv
 
 
 ss:

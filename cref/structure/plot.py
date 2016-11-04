@@ -46,7 +46,7 @@ def ramachandran_surface():
     plt.contourf(
         list(OrderedDict.fromkeys(_ramachandran_densities['phi'])),
         list(OrderedDict.fromkeys(_ramachandran_densities['psi'])),
-        _ramachandran_densities['value'].reshape(180, 180).T,
+        _ramachandran_densities['value'].values.reshape(180, 180).T,
         levels=[0, 0.0005, 0.02, 1],
         colors=['#FFFFFF', '#B3E8FF', '#7FD9FF']
     )

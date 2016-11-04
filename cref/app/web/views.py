@@ -1,3 +1,5 @@
+import os 
+
 import flask
 from cref.app.web import app
 from cref.app.web.tasks import predict_structure
@@ -19,9 +21,10 @@ def failure(reason='Unknown'):
 
 @app.route('/predict/', methods=['POST'])
 def predict():
-    print(flask.request.data)
+    print('\n\n==> Received parameters:', flask.request.data)
     params = flask.request.get_json(force=True)
-    if 'sequence' not in params:
+    if 'sequence' not in params or not params['sequence']:
+        print('ERROR: empty input sequence')
         return failure('You did not provide an input sequence')
     sequence = [x for x in params['sequence'] if x in "ACDEFGHIKLMNPQRSTVWYX"]
     resp = predict_structure.delay(''.join(sequence), params)
@@ -42,7 +45,10 @@ def status(task_id):
 
 @app.route('/prediction/<path:filename>')
 def download_file(filename):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = dir_path[:dir_path.find('cref2') + len('cref2')]
     return flask.send_from_directory(
-        '/home/mchelem/dev/cref2/predictions/',
+        os.path.join(dir_path, 'predictions/'),
         filename, as_attachment=True
-    )
+    )	
+

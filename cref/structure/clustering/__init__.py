@@ -51,8 +51,8 @@ def plot_clusters(model, SX, angles, phi_scaler, psi_scaler, fragment,
 def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
                            selector="ss", name="cluster_plot",
                            output_writer=None, output_dir=None):
-    phi = blast_structures['phi']
-    psi = blast_structures['psi']
+    phi = blast_structures['phi'].values.reshape(-1, 1)
+    psi = blast_structures['psi'].values.reshape(-1, 1)
     structures = blast_structures['central_ss']
 
     # Encode each secondary structure as the ascii value for the character
@@ -68,7 +68,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     phi_scaler = preprocessing.StandardScaler().fit(phi)
     psi_scaler = preprocessing.StandardScaler().fit(psi)
 
-    X = np.vstack((zip(phi_scaler.transform(phi), psi_scaler.transform(psi))))
+    X = np.hstack((phi_scaler.transform(phi), psi_scaler.transform(psi)))
     X = sparse.hstack((X, encoded_structures))
 
     model = KMeans(init='k-means++', n_clusters=n_clusters, random_state=1)
@@ -87,7 +87,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
         name, output_writer
     )
     angles = (
-        phi_scaler.inverse_transform(angles[0]),
-        psi_scaler.inverse_transform(angles[1])
+        phi_scaler.inverse_transform(angles[0].reshape(-1, 1)),
+        psi_scaler.inverse_transform(angles[1].reshape(-1, 1))
     )
     return angles, inertia
