@@ -84,7 +84,7 @@ def cluster_torsion_angles(blast_structures, ss, n_clusters=8,
     plot_clusters(
         model, X, angles,
         phi_scaler, psi_scaler,
-        name, output_writer, output_dir,
+        name, output_writer
     )
     angles = (
         phi_scaler.inverse_transform(angles[0]),

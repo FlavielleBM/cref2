@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 from Bio import pairwise2
-from Bio.PDB.Polypeptide import one_to_three
 
 from cref import sequence
 from cref.sequence.alignment import Blast
@@ -140,30 +139,6 @@ class BaseApp:
                     identity = self.pdb_identities[(hsp.pdb_code, hsp.chain)]
 
             if identity <= self.excluded_identity:
-
-                try:
-                    template = dict()
-                    for i in range(start, end):
-                        template[index] = dict(
-                            NAME=one_to_three(angles['residues'][i]),
-                            PHI=angles['phi'][i],
-                            PSI=angles['psi'][i],
-                            OMEGA=angles['omega'][i],
-                        )
-                        for j in range(5):
-                            chi = 'CHI{}'.format(j + 1)
-                            template[index][chi] = angles['chis'][j][i]
-                            if math.isnan(template[index][chi]):
-                                template[index][chi] = None
-                        index += 1
-
-                except IndexError:
-                    raise IndexError(
-                        "PDB {} doesn't include the required sequence.".format(
-                            hsp.pdb_code
-                        )
-                    )
-
                 if hsp_ss[start:end]:
                     return dict(
                         pdb=hsp.pdb_code,
@@ -178,14 +153,14 @@ class BaseApp:
                         score=hsp.score,
                         phi=round(phi, 2),
                         psi=round(psi, 2),
-                    ), template
+                    )
             else:
                 logger.info('Skipping {}, identity {}  > {}'.format(
                     hsp.pdb_code.upper() + ':' + hsp.chain.upper(),
                     round(identity, 2),
                     self.excluded_identity)
                 )
-        return None, None
+        return None
 
     def get_torsion_angles(self, pdb_code):
         if pdb_code not in self.torsions:
@@ -197,7 +172,6 @@ class BaseApp:
 
     def get_structures_for_blast(self, fragment, ss, hsps, index):
         blast_structures = []
-        templates = []
         hsps.sort(key=lambda hsp: (hsp.identities, hsp.score), reverse=True)
         for hsp in hsps:
             if len(blast_structures) < self.max_templates:
@@ -208,9 +182,8 @@ class BaseApp:
                             pdb_code))
                     elif pdb_code not in self.failed_pdbs:
                         angles = self.get_torsion_angles(pdb_code)
-                        structure, template = self.get_hsp_structure(
+                        structure = self.get_hsp_structure(
                             fragment, ss, hsp, angles, index)
-                        templates.append(template)
                         if structure:
                             blast_structures.append(structure)
                 except Exception as e:
@@ -219,7 +192,7 @@ class BaseApp:
             else:
                 break
 
-        return blast_structures, templates
+        return blast_structures
 
     def get_secondary_structure(self, aa_sequence, output_dir):
         self.reporter('PREDICTING_SECONDARY_STRUCTURE')
@@ -241,7 +214,7 @@ class BaseApp:
         hsps = self.blast.align(fragment, self.blast_args)
 
         self.reporter('RUNNING_TORSIONS')
-        blast_structures, templates = self.get_structures_for_blast(
+        blast_structures = self.get_structures_for_blast(
             fragment, ss, hsps, index)
         blast_structures = pandas.DataFrame(
             blast_structures,
@@ -266,7 +239,6 @@ class BaseApp:
             "{} ({})".format(fragment[self.central], fragment),
             target,
             output_writer=self.pdf_writer,
-            output_dir=output_dir,
         )
         logger.info('Clustering {} fragments'.format(len(blast_structures)))
         return cluster_torsion_angles(
@@ -277,7 +249,7 @@ class BaseApp:
             name="{} ({})".format(fragment[self.central], fragment),
             output_writer=self.pdf_writer,
             output_dir=output_dir,
-        ) + (templates,)
+        )
 
     def display_elapsed_time(self, start_time):
         elapsed_time = time.time() - start_time
@@ -345,7 +317,6 @@ class BaseApp:
         plt.close()
 
     def run(self, aa_sequence, output_dir):
-        template_library = []
         self.sequence = aa_sequence
         report_dir = os.path.join(output_dir, 'report')
 
@@ -377,9 +348,8 @@ class BaseApp:
                     i + 1, fragments_len))
                 ss = fragments_ss[i]
 
-                angles, inertia, templates = self.get_angles_for_fragment(
+                angles, inertia = self.get_angles_for_fragment(
                     fragment, ss, i, report_dir)
-                template_library.append(templates)
                 dihedral_angles.append(angles)
                 inertias.append(inertia)
                 logger.info('-' * 30)
@@ -399,8 +369,6 @@ class BaseApp:
         self.reporter('WRITING_PDB')
         output_file = os.path.join(output_dir, 'predicted_structure.pdb')
         write_pdb(aa_sequence, dihedral_angles, self.central, output_file)
-        template_file = os.path.join(output_dir, 'template_library.pkl')
-        pickle.dump(template_library, open(template_file, 'wb'), 2)
         self.display_elapsed_time(start_time)
         self.excel_writer.close()
         return os.path.abspath(output_file)
