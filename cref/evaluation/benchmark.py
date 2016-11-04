@@ -108,11 +108,11 @@ def read_config():
     excluded_pdbs = [x.strip() for x in sys.argv[2].split()]
     excluded_pdbs.append(pdb_id)
 
-    fragment_size = [5, 7, 9]
-    number_of_clusters = [4, 6, 8, 10]
-    matrix = ["PAM30", "BLOSUM62"]
-    max_templates = [50, 100]
-    number_of_alignments = [2000]
+    fragment_size = range(5, 16, 2)
+    number_of_clusters = range(4, 13)
+    matrix = ["PAM30"]
+    max_templates = [100]
+    number_of_alignments = [1000]
     params_list = []
     print(len(list(itertools.product(
         fragment_size,
@@ -191,6 +191,7 @@ def main():
 
     for params in test_cases:
             print('Predicting', params['pdb'], params['id'])
+            print(params)
             handler, fasta_file = tempfile.mkstemp(
                 suffix='.fasta', prefix='tmp')
             download_fasta(params['pdb'], fasta_file)
@@ -207,6 +208,7 @@ def main():
                 os.path.join(params['output_dir'], 'alignment-pymol.png'),
             )
             print('Prediction written to', output_files)
+            print('RMSD from reference structure:', rmsd)
             os.remove(fasta_file)
             rmsds_to_csv(results, params['pdb'])
     print(results)
