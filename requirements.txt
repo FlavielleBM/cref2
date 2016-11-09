@@ -25,8 +25,6 @@ numpy==1.11.2
 openpyxl==2.4.0
 pandas==0.19.0
 pbr==1.10.0
-pkg-resources==0.0.0
-porter-paleale==1.0
 pyparsing==2.1.10
 python-dateutil==2.5.3
 pytz==2016.7
