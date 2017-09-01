@@ -36,6 +36,7 @@ peptide:
 
 python_packages:
 	virtualenv --python=/usr/bin/python3.5 env
+	bash -i -c "source env/bin/activate && pip install pip --upgrade"
 	bash -i -c "source env/bin/activate && pip install -r requirements.txt"
 	bash -i -c "source env/bin/activate && pip install git+https://github.com/mchelem/porter_paleale"
 
