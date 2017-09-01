@@ -53,6 +53,7 @@ packages:
 	sudo apt-get install -y liblapack-dev gcc gfortran # Required by numpy
 	sudo apt-get install -y ncbi-blast+ # Required to make sequence alignments
 	sudo apt-get install -y python3.5 python3.5-dev python3.5-tk python-virtualenv # Basic python env
+	sudo apt-get install -y pymol
 
 
 ss_db:
