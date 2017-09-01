@@ -8,10 +8,10 @@ import tempfile
 import subprocess
 
 import pandas
-import requests
 from Bio import SeqIO
 
 from cref.app import BaseApp
+from cref.libs import rcsb
 
 logger = logging.getLogger('CReF')
 
@@ -116,30 +116,6 @@ def predict_fasta(filepath, output_dir, params):
         output_filepaths.append(output)
     return output_filepaths
 
-
-def _download_file(url, filepath):
-    r = requests.get(url, stream=True)
-    with open(filepath, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk:  # filter out keep-alive new chunks
-                f.write(chunk)
-                f.flush()
-    return filepath
-
-
-def download_fasta(pdb_code, filepath):
-    """"""
-    url = ('http://www.rcsb.org/pdb'
-           '/files/fasta.txt?structureIdList=' + pdb_code.upper())
-    return _download_file(url, filepath)
-
-
-def download_pdb(pdb_code, filepath):
-    url = ('http://www.rcsb.org/pdb/download/downloadFile.do?'
-           'fileFormat=pdb&compression=NO&structureId=' + pdb_code.upper())
-    return _download_file(url, filepath)
-
-
 def read_config(module):
     try:
         config = importlib.import_module(module)
@@ -154,7 +130,7 @@ def run_pymol(pdb_code, predicted_filepath):
         os.path.dirname(predicted_filepath),
         'experimental_structure.pdb'
     )
-    experimental_pdb = download_pdb(pdb_code, filepath)
+    experimental_pdb = rcsb.download_pdb(pdb_code, filepath)
     subprocess.call([
         'pymol',
         predicted_filepath,
@@ -180,7 +156,7 @@ def main():
     # PDB code input
     elif args.pdb:
         handler, fasta_file = tempfile.mkstemp(suffix='.fasta', prefix='tmp')
-        download_fasta(args.pdb, fasta_file)
+        rcsb.download_fasta(args.pdb, fasta_file)
         params['pdb'] = args.pdb
         output_files = predict_fasta(fasta_file, args.output_dir, params)
         os.remove(fasta_file)
