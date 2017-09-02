@@ -37,10 +37,7 @@ peptide:
 
 python_packages:
 	virtualenv --python=/usr/bin/python3.5 env
-	bash -i -c "source env/bin/activate && pip install pip --upgrade"
-	bash -i -c "source env/bin/activate && pip install -r requirements.txt"
-	bash -i -c "source env/bin/activate && pip install git+https://github.com/mchelem/porter_paleale"
-
+	bash -i -c "source env/bin/activate && pip install pip --upgrade && pip install -r requirements.txt && pip install git+https://github.com/mchelem/porter_paleale"
 
 server_packages:
 	# Only required when interfacing with the wCReF interface
