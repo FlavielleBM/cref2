@@ -73,6 +73,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 /************************************************************************/
 /* Defines
