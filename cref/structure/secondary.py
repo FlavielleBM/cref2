@@ -1,5 +1,4 @@
 import logging
-import porter_paleale
 
 from cref.libs import sspro
 from cref.utils import Database
@@ -28,6 +27,23 @@ _ss_similar = {
     'C': ('-', 'T', 'S'),
     '-': ('C', 'T', 'S'),
 }
+
+
+class Prediction:
+    """
+    Hold information regarding secondary structure predictions
+    """
+    def __init__(self, sequence, secondary_structure, solvent_accessibility):
+        self.sequence = sequence
+        self.secondary_structure = secondary_structure
+        self.solvent_accessibility = solvent_accessibility
+
+    def __repr__(self):
+        return "{}\n{}\n{}\n".format(
+            self.sequence,
+            self.secondary_structure,
+            self.solvent_accessibility
+        )
 
 
 def ss_eight_to_three(structure):
@@ -156,8 +172,7 @@ class SecondaryStructurePredictor:
                 )
         else:
             logging.info('Read cached secondary structure for ' + sequence)
-            prediction = porter_paleale.Prediction(
-                sequence, prediction[0], prediction[1])
+            prediction = Prediction(sequence, prediction[0], prediction[1])
         return prediction
 
     def porter(self, sequence):
@@ -179,6 +194,7 @@ class SecondaryStructurePredictor:
             e = somewhat exposed (>25% and <=50% accessible)
             E = very exposed     (>50% accessible)
         """
+        import porter_paleale
         return self._predict(sequence, porter_paleale.predict)
 
     def sspro(self, sequence):
