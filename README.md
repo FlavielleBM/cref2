@@ -7,7 +7,7 @@ Implementation of CReF: a Central Residue Fragment-based method to predict appro
 
 ```make install```
 
-The command downloads and build dependencies. For details, read the Makefile.
+The command downloads and builds dependencies. For details, read the Makefile.
 
 ## Usage
 
