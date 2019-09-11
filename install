@@ -1,0 +1,7 @@
+#!/bin/bash
+PKGSTATUS=$(dpkg-query -W -f='${Status}' python3-pyqt5 2>/dev/null | grep -c "ok installed")
+if [ $PKGSTATUS -eq 0 ]
+then
+    sudo apt-get install -y python3-pyqt5
+fi
+cd installer/ && python3 installer.py

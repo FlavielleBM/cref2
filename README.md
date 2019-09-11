@@ -5,9 +5,9 @@ Implementation of CReF: a Central Residue Fragment-based method to predict appro
 
 ## Installation
 
-```make install```
+```./install```
 
-The command downloads and builds dependencies. For details, read the Makefile.
+The command downloads and builds dependencies. For details, read the installer/installer.py file.
 
 ## Usage
 
